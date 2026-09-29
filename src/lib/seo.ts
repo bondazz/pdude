@@ -121,19 +121,13 @@ export function generateCategorySchema(
             '@type': 'ListItem',
             position: 1,
             name: 'PornDude',
-            item: {
-              '@type': 'Thing',
-              '@id': homeUrl,
-            },
+            item: homeUrl,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: category.name[locale] || category.name.en,
-            item: {
-              '@type': 'Thing',
-              '@id': categoryUrl,
-            },
+            item: categoryUrl,
           },
         ],
       },
@@ -193,28 +187,19 @@ export function generateReviewSchema(
             '@type': 'ListItem',
             position: 1,
             name: 'PornDude',
-            item: {
-              '@type': 'Thing',
-              '@id': homeUrl,
-            },
+            item: homeUrl,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: categoryName,
-            item: {
-              '@type': 'Thing',
-              '@id': categoryUrl,
-            },
+            item: categoryUrl,
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: site.name,
-            item: {
-              '@type': 'Thing',
-              '@id': reviewUrl,
-            },
+            item: reviewUrl,
           },
         ],
       },
@@ -270,10 +255,7 @@ export function generateBreadcrumbSchema(
       '@type': 'ListItem',
       position: index + 1,
       name: item.name,
-      item: {
-        '@type': 'Thing',
-        '@id': item.url,
-      },
+      item: item.url,
     })),
   };
 }

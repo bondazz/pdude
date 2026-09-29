@@ -10,8 +10,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // 1. Homepages per locale
   LOCALES.forEach((locale) => {
+    const isEn = locale.code === 'en';
     sitemapEntries.push({
-      url: `${SITE_DOMAIN}/${locale.code}`,
+      url: isEn ? `${SITE_DOMAIN}/` : `${SITE_DOMAIN}/${locale.code}`,
       lastModified: currentDate,
       changeFrequency: 'daily',
       priority: 1.0,
@@ -23,9 +24,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // 2. Category pages per locale
   LOCALES.forEach((locale) => {
+    const isEn = locale.code === 'en';
     CATEGORIES.forEach((cat) => {
       sitemapEntries.push({
-        url: `${SITE_DOMAIN}/${locale.code}/${cat.slug}`,
+        url: isEn ? `${SITE_DOMAIN}/${cat.slug}` : `${SITE_DOMAIN}/${locale.code}/${cat.slug}`,
         lastModified: currentDate,
         changeFrequency: 'daily',
         priority: 0.9,
@@ -38,9 +40,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // 3. Review pages per locale
   LOCALES.forEach((locale) => {
+    const isEn = locale.code === 'en';
     SITES.forEach((site) => {
       sitemapEntries.push({
-        url: `${SITE_DOMAIN}/${locale.code}/review/${site.slug}`,
+        url: isEn
+          ? `${SITE_DOMAIN}/review/${site.slug}`
+          : `${SITE_DOMAIN}/${locale.code}/review/${site.slug}`,
         lastModified: currentDate,
         changeFrequency: 'weekly',
         priority: 0.8,

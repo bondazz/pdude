@@ -41,6 +41,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={localeConfig.dir} className={saira.variable} suppressHydrationWarning>
       <head>
+        <meta charSet="utf-8" />
         <meta name="RATING" content="RTA-5042-1996-1400-1577-RTA" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicons_ph/favicon-32x32.png" />

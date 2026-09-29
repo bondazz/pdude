@@ -203,9 +203,9 @@ export default function Header({ locale }: HeaderProps) {
               <div className="quotes-headline">
                 <p className="quotes-title">Want to save money?</p>
                 <p className="quotes-text">
-                  <a className="quotes-link" href="#" target="_blank" rel="noopener">
+                  <Link className="quotes-link" href={`/${locale}/best-paysites`}>
                     Unlock Deals extension
-                  </a>{' '}
+                  </Link>{' '}
                   and get access to 100+ exclusive deals.
                 </p>
               </div>
@@ -217,9 +217,9 @@ export default function Header({ locale }: HeaderProps) {
           {/* Social & Action Circular Buttons */}
           <ul className="socials">
             <li className="socials-item socials-item-extension">
-              <a className="socials-link deals-dice-btn" href="#" aria-label="Deals">
+              <Link className="socials-link deals-dice-btn" href={`/${locale}/best-paysites`} aria-label="Exclusive Deals">
                 🎲
-              </a>
+              </Link>
               <span className="hover-block">DEALS</span>
             </li>
             <li className="socials-item">
@@ -229,9 +229,9 @@ export default function Header({ locale }: HeaderProps) {
               <span className="hover-block">Contact Us</span>
             </li>
             <li className="socials-item">
-              <a className="socials-link casting-link" href="#" aria-label="Casting">
+              <Link className="socials-link casting-link" href={`/${locale}/live-sex-cams`} aria-label="Casting & Cams">
                 <Video size={16} />
-              </a>
+              </Link>
               <span className="hover-block">Casting</span>
             </li>
             <li className="socials-item">
@@ -243,7 +243,7 @@ export default function Header({ locale }: HeaderProps) {
               <span className="hover-block">Follow Twitter</span>
             </li>
             <li className="socials-item">
-              <Link className="socials-link blog-link" href={`/${locale}`} aria-label="Official Blog">
+              <Link className="socials-link blog-link" href={`/${locale}/top-porn-tube-sites`} aria-label="Official Blog">
                 <span className="blog-btn-text">
                   <span className="blog-my">MY</span>
                   <span className="blog-word">BLOG</span>
@@ -253,12 +253,12 @@ export default function Header({ locale }: HeaderProps) {
               <span className="hover-block">Official Blog</span>
             </li>
             <li className="socials-item">
-              <a className="socials-link shop-link" href="#" aria-label="Official Shop">
+              <Link className="socials-link shop-link" href={`/${locale}/best-ai-porn-sites`} aria-label="Official Shop">
                 <span className="shop-icon-wrapper">
                   <span className="shop-kiosk">🏪</span>
                   <span className="shop-sparkle">✨</span>
                 </span>
-              </a>
+              </Link>
               <span className="hover-block">Official Shop</span>
             </li>
             <li className="socials-item">
