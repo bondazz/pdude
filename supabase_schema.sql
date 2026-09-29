@@ -119,3 +119,78 @@ ON public.reviews FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 CREATE POLICY "Allow service role full access on site_clicks"
 ON public.site_clicks FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 11. Blogs Table
+CREATE TABLE IF NOT EXISTS public.blogs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    excerpt TEXT,
+    content TEXT NOT NULL,
+    cover_image TEXT,
+    author TEXT DEFAULT 'Samir (Admin)',
+    views_count INT DEFAULT 0,
+    published BOOLEAN DEFAULT true,
+    tags TEXT[] DEFAULT ARRAY[]::TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_blogs_slug ON public.blogs(slug);
+CREATE INDEX IF NOT EXISTS idx_blogs_created ON public.blogs(created_at DESC);
+
+ALTER TABLE public.blogs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read access on published blogs"
+ON public.blogs FOR SELECT TO anon, authenticated USING (published = true);
+
+CREATE POLICY "Allow service role full access on blogs"
+ON public.blogs FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 12. User Profiles Table (Linked to Supabase Auth)
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT,
+    full_name TEXT,
+    role TEXT DEFAULT 'user', -- 'admin', 'moderator', 'user'
+    avatar_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow users to read their own profile or admin read all"
+ON public.profiles FOR SELECT TO authenticated
+USING (auth.uid() = id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+
+CREATE POLICY "Allow service role full access on profiles"
+ON public.profiles FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 13. Auto-create Profile Trigger for New Registrations
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (
+    new.id,
+    new.email,
+    COALESCE(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+    CASE
+      WHEN new.email = 'info@pornhub.net.co' THEN 'admin'
+      ELSE COALESCE(new.raw_user_meta_data->>'role', 'user')
+    END
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    role = EXCLUDED.role,
+    updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+

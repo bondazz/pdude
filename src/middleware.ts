@@ -7,10 +7,11 @@ const LOCALE_CODES = new Set(HREFLANG_CODES);
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Ignore static assets, api routes, icons
+  // Ignore static assets, api routes, admin panel, icons
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
+    pathname.startsWith('/admin') ||
     pathname.startsWith('/images') ||
     pathname.includes('.') ||
     pathname === '/favicon.ico' ||

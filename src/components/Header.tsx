@@ -255,7 +255,7 @@ export default function Header({ locale }: HeaderProps) {
               <span className="hover-block">Follow Twitter</span>
             </li>
             <li className="socials-item">
-              <Link className="socials-link blog-link" href={getLocalizedUrl('top-porn-tube-sites', locale)} aria-label="Official Blog">
+              <Link className="socials-link blog-link" href={getLocalizedUrl('blog', locale)} aria-label="Official Blog">
                 <span className="blog-btn-text">
                   <span className="blog-my">MY</span>
                   <span className="blog-word">BLOG</span>

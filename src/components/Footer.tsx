@@ -82,6 +82,7 @@ export default function Footer({ locale }: FooterProps) {
             © 2026 PornHub.net.co. {getTranslation(locale, 'allRightsReserved')}
           </div>
           <div className="footer-legal-links">
+            <Link href={getLocalizedUrl('blog', locale)} aria-label="Official Blog">Blog</Link>
             <Link href={`${getLocalizedUrl('', locale)}#compliance`} aria-label="18+ Compliance Policy">18+ Compliance</Link>
             <Link href={`${getLocalizedUrl('', locale)}#rta`} aria-label="Restricted to Adults Notice">RTA Label</Link>
             <Link href={`${getLocalizedUrl('', locale)}#privacy`} aria-label="Privacy Policy">Privacy Policy</Link>
