@@ -7,8 +7,8 @@ import '../admin.css';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('info@pornhub.net.co');
-  const [password, setPassword] = useState('Samir_1155');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -108,8 +108,9 @@ export default function AdminLoginPage() {
                 className="admin-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="info@pornhub.net.co"
+                placeholder="admin@domain.com"
                 required
+                autoComplete="off"
                 style={{ paddingLeft: '38px' }}
               />
               <Mail size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -126,6 +127,7 @@ export default function AdminLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                autoComplete="new-password"
                 style={{ paddingLeft: '38px', paddingRight: '38px' }}
               />
               <Lock size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />

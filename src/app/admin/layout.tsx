@@ -12,7 +12,9 @@ import {
   Settings,
   LogOut,
   ExternalLink,
-  ShieldAlert,
+  Menu,
+  X,
+  ShieldCheck,
 } from 'lucide-react';
 import './admin.css';
 
@@ -25,11 +27,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const [user, setUser] = useState<{ email: string; name?: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // If this is the login page, don't show the dashboard shell
   const isLoginPage = pathname === '/admin/login';
 
   useEffect(() => {
+    // Automatically close mobile menu on page change
+    setMobileMenuOpen(false);
+
     if (isLoginPage) {
       setLoading(false);
       return;
@@ -62,28 +68,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
-  if (isLoginPage) {
-    return <>{children}</>;
-  }
-
-  if (loading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#0b0d13',
-        color: '#ff9701',
-        fontSize: '16px',
-        fontWeight: 600,
-        gap: '12px',
-      }}>
-        <span>Yüklənir...</span>
-      </div>
-    );
-  }
-
   const navLinks = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/sites', label: 'Saytlar', icon: Globe },
@@ -93,82 +77,173 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: '/admin/settings', label: 'Parametrlər & Baza', icon: Settings },
   ];
 
-  return (
-    <div className="admin-root">
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div className="admin-brand">
-          <span className="admin-logo-badge">PORNHUB</span>
-          <span className="admin-brand-title">Admin Panel</span>
-        </div>
-
-        <nav className="admin-nav">
-          {navLinks.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`admin-nav-item ${isActive ? 'active' : ''}`}
-              >
-                <Icon size={18} className="admin-nav-icon" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="admin-sidebar-footer">
-          <div className="admin-user-pill">
-            <div className="admin-user-info">
-              <span className="admin-user-name">{user?.name || user?.email || 'Samir'}</span>
-              <span className="admin-user-role">{user?.role || 'Admin'}</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="admin-btn admin-btn-danger"
-              style={{ padding: '6px 10px', fontSize: '12px' }}
-              title="Çıxış"
-            >
-              <LogOut size={14} />
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Container */}
-      <div className="admin-main">
-        {/* Top Header */}
-        <header className="admin-topbar">
-          <div className="admin-topbar-left">
-            <h2 className="admin-page-title">
-              {navLinks.find((l) => l.href === pathname)?.label || 'İdarəetmə Paneli'}
-            </h2>
-          </div>
-
-          <div className="admin-topbar-right">
-            <div className="admin-status-pill" title="Supabase PostgreSQL bağlantısı aktivdir">
-              <span className="status-dot"></span>
-              <span>Supabase Live</span>
-            </div>
-
-            <Link
-              href="/"
-              target="_blank"
-              className="admin-btn admin-btn-secondary"
-            >
-              <ExternalLink size={14} />
-              <span>Sayta Bax</span>
-            </Link>
-          </div>
-        </header>
-
-        {/* Dynamic Page Content */}
-        <main className="admin-content">
+  if (isLoginPage) {
+    return (
+      <html lang="en" className="dark admin-html">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+          <title>Admin Giriş | PornHub Portal</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </head>
+        <body className="admin-body">
           {children}
-        </main>
-      </div>
-    </div>
+        </body>
+      </html>
+    );
+  }
+
+  if (loading) {
+    return (
+      <html lang="en" className="dark admin-html">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+          <title>Admin Yüklənir...</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </head>
+        <body className="admin-body">
+          <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0b0d13',
+            color: '#ff9701',
+            fontSize: '16px',
+            fontWeight: 600,
+            gap: '14px',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '3px solid rgba(255, 151, 1, 0.2)',
+              borderTopColor: '#ff9701',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            <span>Yoxlanılır və yüklənir...</span>
+          </div>
+        </body>
+      </html>
+    );
+  }
+
+  return (
+    <html lang="en" className="dark admin-html">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+        <title>Admin Panel | PornHub Portal</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </head>
+      <body className="admin-body">
+        <div className="admin-root">
+          {/* Mobile Backdrop */}
+          {mobileMenuOpen && (
+            <div
+              className="admin-backdrop"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Menyunu bağla"
+            />
+          )}
+
+          {/* Sidebar */}
+          <aside className={`admin-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+            <div className="admin-brand">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                <span className="admin-logo-badge">PORNHUB</span>
+                <span className="admin-brand-title">Admin Panel</span>
+              </div>
+              <button
+                className="admin-close-btn"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Bağla"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <nav className="admin-nav">
+              {navLinks.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`admin-nav-item ${isActive ? 'active' : ''}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon size={18} className="admin-nav-icon" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="admin-sidebar-footer">
+              <div className="admin-user-pill">
+                <div className="admin-user-info">
+                  <span className="admin-user-name">{user?.name || user?.email || 'Samir'}</span>
+                  <span className="admin-user-role">{user?.role || 'Admin'}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="admin-btn admin-btn-danger"
+                  style={{ padding: '6px 10px', fontSize: '12px' }}
+                  title="Çıxış"
+                >
+                  <LogOut size={14} />
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Container */}
+          <div className="admin-main">
+            {/* Top Header */}
+            <header className="admin-topbar">
+              <div className="admin-topbar-left">
+                <button
+                  className="admin-hamburger-btn"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  aria-label="Menyu"
+                  type="button"
+                >
+                  <Menu size={22} />
+                </button>
+
+                <h2 className="admin-page-title">
+                  {navLinks.find((l) => l.href === pathname)?.label || 'İdarəetmə Paneli'}
+                </h2>
+              </div>
+
+              <div className="admin-topbar-right">
+                <div className="admin-status-pill" title="Supabase PostgreSQL bağlantısı aktivdir">
+                  <span className="status-dot"></span>
+                  <span className="admin-status-text">Supabase Live</span>
+                </div>
+
+                <Link
+                  href="/"
+                  target="_blank"
+                  className="admin-btn admin-btn-secondary"
+                >
+                  <ExternalLink size={14} />
+                  <span className="admin-btn-text">Sayta Bax</span>
+                </Link>
+              </div>
+            </header>
+
+            {/* Dynamic Page Content */}
+            <main className="admin-content">
+              {children}
+            </main>
+          </div>
+        </div>
+      </body>
+    </html>
   );
 }
