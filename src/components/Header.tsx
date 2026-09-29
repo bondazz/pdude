@@ -286,6 +286,8 @@ export default function Header({ locale }: HeaderProps) {
                 src="/images/thepornhub_net_co.webp"
                 alt="PornHub.net.co Mascot"
                 fetchPriority="high"
+                decoding="sync"
+                loading="eager"
                 draggable={false}
                 width={240}
                 height={260}

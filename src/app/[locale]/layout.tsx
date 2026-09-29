@@ -47,6 +47,20 @@ export default async function LocaleLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/favicons_ph/favicon-16x16.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/favicons_ph/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
+        {/* Instant 0ms Preloads for Critical Images */}
+        <link rel="preload" as="image" href="/images/background.webp" type="image/webp" fetchPriority="high" />
+        <link rel="preload" as="image" href="/images/thepornhub_net_co.webp" type="image/webp" fetchPriority="high" />
+
+        {/* Critical Instant Paint Inline CSS - Eliminates ANY white flash or layout jump on Hard Refresh */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          html, body {
+            background-color: #0b0d13 !important;
+            background-image: url('/images/background.webp') !important;
+            background-repeat: repeat !important;
+            background-size: 25% auto !important;
+            background-attachment: scroll !important;
+          }
+        `}} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Saira:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
