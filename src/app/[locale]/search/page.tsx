@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { SITES } from '@/data/sites';
 import { CATEGORIES } from '@/data/categories';
 import { Locale } from '@/lib/types';
-import { getTranslation, isValidLocale } from '@/lib/i18n';
+import { getTranslation, isValidLocale, getLocalizedUrl } from '@/lib/i18n';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import Favicon from '@/components/Favicon';
 import { Search, ShieldCheck, ExternalLink, ArrowRight } from 'lucide-react';
@@ -38,8 +38,8 @@ function SearchContent({ localePromise }: { localePromise: Promise<{ locale: str
   }, [searchTerm, resolvedLocale]);
 
   const breadcrumbs = [
-    { name: getTranslation(resolvedLocale, 'home'), url: `/${resolvedLocale}` },
-    { name: `Search: "${searchTerm}"`, url: `/${resolvedLocale}/search?q=${encodeURIComponent(searchTerm)}` },
+    { name: getTranslation(resolvedLocale, 'home'), url: getLocalizedUrl('', resolvedLocale) },
+    { name: `Search: "${searchTerm}"`, url: getLocalizedUrl(`search?q=${encodeURIComponent(searchTerm)}`, resolvedLocale) },
   ];
 
   return (
@@ -106,7 +106,7 @@ function SearchContent({ localePromise }: { localePromise: Promise<{ locale: str
                 </a>
 
                 <Link
-                  href={`/${resolvedLocale}/review/${site.slug}`}
+                  href={getLocalizedUrl(`review/${site.slug}`, resolvedLocale)}
                   className="cat-bottom-btn"
                   style={{
                     margin: 0,

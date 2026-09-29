@@ -436,3 +436,11 @@ export function getTranslation(locale: Locale, key: string): string {
 export function isValidLocale(locale: string): locale is Locale {
   return LOCALES.some((l) => l.code === locale);
 }
+
+export function getLocalizedUrl(path: string = '', locale: Locale = 'en'): string {
+  const cleanPath = path.replace(/^\/+/, '');
+  if (locale === 'en') {
+    return cleanPath ? `/${cleanPath}` : '/';
+  }
+  return cleanPath ? `/${locale}/${cleanPath}` : `/${locale}`;
+}

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getCategoryBySlug, getSitesByCategory, getSidebarCategories } from '@/lib/dataService';
 import { CATEGORIES } from '@/data/categories';
-import { LOCALES, getTranslation, isValidLocale } from '@/lib/i18n';
+import { LOCALES, getTranslation, isValidLocale, getLocalizedUrl } from '@/lib/i18n';
 import { Locale } from '@/lib/types';
 import { generateCategorySchema, generateHreflangAlternates, SITE_DOMAIN } from '@/lib/seo';
 import Favicon from '@/components/Favicon';
@@ -90,7 +90,7 @@ export default async function CategoryPage({
           {/* Breadcrumb Row */}
           <nav className="portal-breadcrumb" aria-label="Breadcrumb">
             <span className="portal-breadcrumb-dot" style={{ backgroundColor: category.hexColor }}></span>
-            <Link href={`/${locale}`} className="portal-breadcrumb-home">
+            <Link href={getLocalizedUrl('', locale)} className="portal-breadcrumb-home">
               PornDude
             </Link>
             <span className="portal-breadcrumb-separator">&gt;</span>
@@ -143,7 +143,7 @@ export default async function CategoryPage({
                   return (
                     <Link
                       key={item.category.id}
-                      href={`/${locale}/${item.category.slug}`}
+                      href={getLocalizedUrl(item.category.slug, locale)}
                       className={`portal-sidebar-row ${isActive ? 'is-active' : ''}`}
                       title={item.category.name[locale] || item.category.name.en}
                     >
@@ -246,7 +246,7 @@ export default async function CategoryPage({
                           {/* Hover Overlay with Action Buttons */}
                           <div className="portal-card-hover-overlay">
                             <Link
-                              href={`/${locale}/review/${site.slug}`}
+                              href={getLocalizedUrl(`review/${site.slug}`, locale)}
                               className="portal-hover-btn portal-hover-btn-review"
                             >
                               <span>{getTranslation(locale, 'readReview') || 'Review'}</span>

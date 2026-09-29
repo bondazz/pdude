@@ -25,19 +25,29 @@ export function middleware(request: NextRequest) {
   const segments = pathname.split('/').filter(Boolean);
   const firstSegment = segments[0];
 
+  // 1. If someone accesses /en or /en/... -> 301 Redirect to strip 'en'
+  if (firstSegment === 'en') {
+    const remainingSegments = segments.slice(1);
+    const newPathname = remainingSegments.length > 0 ? `/${remainingSegments.join('/')}` : '/';
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = newPathname;
+    return NextResponse.redirect(redirectUrl, { status: 301 });
+  }
+
+  // 2. If it's another locale (/tr, /ru, /es, /de, etc.) -> keep it
+  if (firstSegment && LOCALE_CODES.has(firstSegment as any)) {
+    return NextResponse.next();
+  }
+
+  // 3. Root path / -> rewrite directly to default locale /en
   if (!firstSegment) {
-    // Root path -> rewrite directly to default locale /en (HTTP 200, keeps URL bar clean at /)
     const url = request.nextUrl.clone();
     url.pathname = `/${DEFAULT_LOCALE}`;
     return NextResponse.rewrite(url);
   }
 
-  if (LOCALE_CODES.has(firstSegment as any)) {
-    return NextResponse.next();
-  }
-
-  // Path does not have locale (e.g. /top-porn-tube-sites or /review/pornhub)
-  // Rewrite to default locale so Googlebot and users can access clean URLs directly!
+  // 4. Path does not have locale (e.g. /top-porn-tube-sites or /review/pornhub or /search)
+  // Rewrite to default locale internally so Next.js App Router matches [locale] routes
   const url = request.nextUrl.clone();
   url.pathname = `/${DEFAULT_LOCALE}/${pathname.replace(/^\//, '')}`;
   return NextResponse.rewrite(url);

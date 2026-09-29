@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { LOCALES } from '@/lib/i18n';
+import { LOCALES, getLocalizedUrl } from '@/lib/i18n';
 import { Locale } from '@/lib/types';
 import { ChevronDown } from 'lucide-react';
 
@@ -44,7 +44,7 @@ export default function CategoryLocaleSelector({ currentLocale, currentSlug }: C
           {LOCALES.map((loc) => (
             <Link
               key={loc.code}
-              href={`/${loc.code}/${currentSlug}`}
+              href={getLocalizedUrl(currentSlug, loc.code as Locale)}
               className={`portal-lang-option ${loc.code === currentLocale ? 'is-active' : ''}`}
               onClick={() => setOpen(false)}
             >

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LOCALES } from '@/lib/i18n';
+import { LOCALES, getLocalizedUrl } from '@/lib/i18n';
 import { Locale } from '@/lib/types';
 import { Search, Moon, Sun, Mail, Video, Menu, X } from 'lucide-react';
 
@@ -43,7 +43,7 @@ export default function Header({ locale }: HeaderProps) {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/${locale}/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(getLocalizedUrl(`search?q=${encodeURIComponent(searchQuery.trim())}`, locale));
     }
   };
 
@@ -64,7 +64,7 @@ export default function Header({ locale }: HeaderProps) {
 
         <Link
           className="header-mob-logo"
-          href={`/${locale}`}
+          href={getLocalizedUrl('', locale)}
           aria-label="PornHub.net.co"
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
@@ -137,7 +137,7 @@ export default function Header({ locale }: HeaderProps) {
                     <li key={l.code} className="lang-menu-item">
                       <Link
                         className={`lang-menu-link ${l.code === locale ? 'active' : ''}`}
-                        href={`/${l.code}`}
+                        href={getLocalizedUrl('', l.code)}
                         onClick={() => setLangOpen(false)}
                       >
                         <span className="flag-icon">{l.flag}</span>
@@ -158,7 +158,7 @@ export default function Header({ locale }: HeaderProps) {
         <div className="header-col header-col-lead">
           <Link
             className="header-logo-main"
-            href={`/${locale}`}
+            href={getLocalizedUrl('', locale)}
             aria-label="PornHub.net.co Home"
             draggable={false}
             onContextMenu={(e) => e.preventDefault()}
@@ -203,7 +203,7 @@ export default function Header({ locale }: HeaderProps) {
               <div className="quotes-headline">
                 <p className="quotes-title">Want to save money?</p>
                 <p className="quotes-text">
-                  <Link className="quotes-link" href={`/${locale}/best-paysites`}>
+                  <Link className="quotes-link" href={getLocalizedUrl('best-paysites', locale)}>
                     Unlock Deals extension
                   </Link>{' '}
                   and get access to 100+ exclusive deals.
@@ -217,19 +217,19 @@ export default function Header({ locale }: HeaderProps) {
           {/* Social & Action Circular Buttons */}
           <ul className="socials">
             <li className="socials-item socials-item-extension">
-              <Link className="socials-link deals-dice-btn" href={`/${locale}/best-paysites`} aria-label="Exclusive Deals">
+              <Link className="socials-link deals-dice-btn" href={getLocalizedUrl('best-paysites', locale)} aria-label="Exclusive Deals">
                 🎲
               </Link>
               <span className="hover-block">DEALS</span>
             </li>
             <li className="socials-item">
-              <Link className="socials-link email-link" href={`/${locale}/review/pornhub`} aria-label="Contact Us">
+              <Link className="socials-link email-link" href={getLocalizedUrl('review/pornhub', locale)} aria-label="Contact Us">
                 <Mail size={16} />
               </Link>
               <span className="hover-block">Contact Us</span>
             </li>
             <li className="socials-item">
-              <Link className="socials-link casting-link" href={`/${locale}/live-sex-cams`} aria-label="Casting & Cams">
+              <Link className="socials-link casting-link" href={getLocalizedUrl('live-sex-cams', locale)} aria-label="Casting & Cams">
                 <Video size={16} />
               </Link>
               <span className="hover-block">Casting</span>
@@ -243,7 +243,7 @@ export default function Header({ locale }: HeaderProps) {
               <span className="hover-block">Follow Twitter</span>
             </li>
             <li className="socials-item">
-              <Link className="socials-link blog-link" href={`/${locale}/top-porn-tube-sites`} aria-label="Official Blog">
+              <Link className="socials-link blog-link" href={getLocalizedUrl('top-porn-tube-sites', locale)} aria-label="Official Blog">
                 <span className="blog-btn-text">
                   <span className="blog-my">MY</span>
                   <span className="blog-word">BLOG</span>
@@ -253,7 +253,7 @@ export default function Header({ locale }: HeaderProps) {
               <span className="hover-block">Official Blog</span>
             </li>
             <li className="socials-item">
-              <Link className="socials-link shop-link" href={`/${locale}/best-ai-porn-sites`} aria-label="Official Shop">
+              <Link className="socials-link shop-link" href={getLocalizedUrl('best-ai-porn-sites', locale)} aria-label="Official Shop">
                 <span className="shop-icon-wrapper">
                   <span className="shop-kiosk">🏪</span>
                   <span className="shop-sparkle">✨</span>
@@ -277,7 +277,7 @@ export default function Header({ locale }: HeaderProps) {
 
         {/* Right Column: Mascot emerging from behind Card 4 */}
         <div className="header-col header-col-mascot">
-          <Link className="header-logo-maskot-half" href={`/${locale}`} aria-label="PornHub.net.co Mascot" draggable={false} tabIndex={-1}>
+          <Link className="header-logo-maskot-half" href={getLocalizedUrl('', locale)} aria-label="PornHub.net.co Mascot" draggable={false} tabIndex={-1}>
             <picture>
               <source media="(min-width: 992px)" srcSet="/images/thepornhub_net_co.webp" />
               {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import Favicon from './Favicon';
 import { CategoryItem, Locale, SiteItem } from '@/lib/types';
+import { getLocalizedUrl } from '@/lib/i18n';
 import {
   PlaySquare,
   Crown,
@@ -103,7 +104,7 @@ export default function CategoryCard({ category, sites, locale, columnIndex = 1 
             {getCategoryIcon(category.icon)}
           </span>
           <Link
-            href={`/${locale}/${category.slug}`}
+            href={getLocalizedUrl(category.slug, locale)}
             data-visit-category-id={category.id}
           >
             {category.name[locale] || category.name.en}
@@ -193,7 +194,7 @@ export default function CategoryCard({ category, sites, locale, columnIndex = 1 
               {/* Review Button with SEO anchor text */}
               <Link
                 className="review"
-                href={`/${locale}/review/${site.slug}`}
+                href={getLocalizedUrl(`review/${site.slug}`, locale)}
                 aria-label={`${site.name} Review`}
                 data-visit-site-id={site.id}
                 title={`Review of ${site.name}`}
@@ -214,7 +215,7 @@ export default function CategoryCard({ category, sites, locale, columnIndex = 1 
       <div className="category-bottom-wrapper">
         <Link
           className="category-bottom apple-style"
-          href={`/${locale}/${category.slug}`}
+          href={getLocalizedUrl(category.slug, locale)}
           data-visit-category-id={category.id}
           style={{
             ['--cat-accent' as any]: category.hexColor,
