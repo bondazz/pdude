@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { LOCALES, getLocalizedUrl } from '@/lib/i18n';
 import { Locale } from '@/lib/types';
 import { Search, Moon, Sun, Mail, Video, Menu, X } from 'lucide-react';
@@ -13,6 +13,7 @@ interface HeaderProps {
 
 export default function Header({ locale }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [langOpen, setLangOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +49,17 @@ export default function Header({ locale }: HeaderProps) {
   };
 
   const currentLocaleConfig = LOCALES.find((l) => l.code === locale) || LOCALES[0];
+
+  // Clean relative path without locale prefix so language switcher retains current page
+  const cleanRelativePath = (() => {
+    if (!pathname || pathname === '/') return '';
+    const clean = pathname.replace(/^\/+/, '');
+    const parts = clean.split('/');
+    if (parts[0] === locale) {
+      parts.shift();
+    }
+    return parts.join('/');
+  })();
 
   return (
     <header className="header">
@@ -118,36 +130,35 @@ export default function Header({ locale }: HeaderProps) {
             {' '}Find safe free <b>porn sites</b> &amp; premium porn websites all sorted by quality!
           </div>
 
-          <div className="lang-menu">
+          <div className={`lang-menu ${langOpen ? 'lang-menu-open' : ''}`}>
             <button
-              className="lang-menu-btn"
+              className={`lang-menu-btn icon-flag ${locale === 'en' ? 'icon-flag-gb' : `icon-flag-${locale}`}`}
               type="button"
               onClick={() => setLangOpen(!langOpen)}
               title={currentLocaleConfig.name}
               aria-label="Language Menu Button"
-            >
-              <span className="lang-flag">{currentLocaleConfig.flag}</span>
-              <span className="lang-arrow">▾</span>
-            </button>
+              data-lang={locale}
+            ></button>
 
-            {langOpen && (
-              <div className="lang-menu-drop" onMouseLeave={() => setLangOpen(false)}>
-                <ul className="lang-menu-list custom-scrollbar">
-                  {LOCALES.map((l) => (
-                    <li key={l.code} className="lang-menu-item">
-                      <Link
-                        className={`lang-menu-link ${l.code === locale ? 'active' : ''}`}
-                        href={getLocalizedUrl('', l.code)}
-                        onClick={() => setLangOpen(false)}
-                      >
-                        <span className="flag-icon">{l.flag}</span>
-                        <span>{l.nativeName}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="lang-menu-drop" onMouseLeave={() => setLangOpen(false)}>
+              <ul className="lang-menu-list custom-scrollbar">
+                {LOCALES.map((l) => (
+                  <li key={l.code} className="lang-menu-item">
+                    <Link
+                      className={`lang-menu-link icon-flag ${l.code === 'en' ? 'icon-flag-gb' : `icon-flag-${l.code}`} ${l.code === locale ? 'active' : ''}`}
+                      href={getLocalizedUrl(cleanRelativePath, l.code)}
+                      title={l.name}
+                      data-lang={l.code}
+                      hrefLang={l.code}
+                      rel="alternate"
+                      onClick={() => setLangOpen(false)}
+                    >
+                      {l.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>

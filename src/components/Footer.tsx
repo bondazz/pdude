@@ -63,9 +63,13 @@ export default function Footer({ locale }: FooterProps) {
                   key={l.code}
                   href={getLocalizedUrl('', l.code)}
                   className={`footer-lang-link ${l.code === locale ? 'active' : ''}`}
+                  title={`${l.name} (${l.nativeName})`}
+                  data-lang={l.code}
+                  hrefLang={l.code}
+                  rel="alternate"
                 >
-                  <span className="lang-code">{l.code}</span>
-                  <span className="lang-name">{l.nativeName}</span>
+                  <span className={`icon-flag ${l.code === 'en' ? 'icon-flag-gb' : `icon-flag-${l.code}`}`}></span>
+                  <span className="lang-name">{l.name}</span>
                 </Link>
               ))}
             </div>

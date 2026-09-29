@@ -34,7 +34,9 @@ export default function CategoryLocaleSelector({ currentLocale, currentSlug }: C
         className="portal-lang-btn"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
+        title={activeLocale.name}
       >
+        <span className={`icon-flag ${activeLocale.code === 'en' ? 'icon-flag-gb' : `icon-flag-${activeLocale.code}`}`}></span>
         <span>{activeLocale.name}</span>
         <ChevronDown size={14} className={`portal-lang-chevron ${open ? 'is-open' : ''}`} />
       </button>
@@ -46,9 +48,13 @@ export default function CategoryLocaleSelector({ currentLocale, currentSlug }: C
               key={loc.code}
               href={getLocalizedUrl(currentSlug, loc.code as Locale)}
               className={`portal-lang-option ${loc.code === currentLocale ? 'is-active' : ''}`}
+              title={loc.name}
+              data-lang={loc.code}
+              hrefLang={loc.code}
+              rel="alternate"
               onClick={() => setOpen(false)}
             >
-              <span className="portal-lang-flag">{loc.flag}</span>
+              <span className={`icon-flag ${loc.code === 'en' ? 'icon-flag-gb' : `icon-flag-${loc.code}`}`}></span>
               <span>{loc.name}</span>
             </Link>
           ))}
