@@ -467,8 +467,16 @@ export function getMascotImage(locale: Locale): string {
   const mascotMap: Partial<Record<Locale, string>> = {
     ar: '/images/Mascot/arabic.webp',
     az: '/images/Mascot/azerbaijan.webp',
-    tr: '/images/Mascot/turkey.webp',
+    cs: '/images/Mascot/czech.webp',
+    da: '/images/Mascot/danish.webp',
+    de: '/images/Mascot/german.webp',
+    el: '/images/Mascot/greek.webp',
     en: '/images/Mascot/england.webp',
+    es: '/images/Mascot/spanish.webp',
+    fi: '/images/Mascot/finnish.webp',
+    fr: '/images/Mascot/french.webp',
+    he: '/images/Mascot/hebrew.webp',
+    tr: '/images/Mascot/turkey.webp',
   };
   return mascotMap[locale] || '/images/Mascot/england.webp';
 }
