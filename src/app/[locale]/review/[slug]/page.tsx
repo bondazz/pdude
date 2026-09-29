@@ -24,20 +24,8 @@ import {
   Compass,
 } from 'lucide-react';
 
-export function generateStaticParams() {
-  const params: Array<{ locale: string; slug: string }> = [];
-
-  LOCALES.forEach((locale) => {
-    SITES.forEach((site) => {
-      params.push({
-        locale: locale.code,
-        slug: site.slug,
-      });
-    });
-  });
-
-  return params;
-}
+// Revalidate every 60 seconds (Fast dynamic SSR from database)
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,

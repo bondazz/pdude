@@ -13,20 +13,8 @@ import CategoryDisclaimer from '@/components/CategoryDisclaimer';
 import CategoryLocaleSelector from '@/components/CategoryLocaleSelector';
 import { Bell, ArrowRight, ExternalLink, HelpCircle, Check, ChevronRight } from 'lucide-react';
 
-export function generateStaticParams() {
-  const params: Array<{ locale: string; slug: string }> = [];
-
-  LOCALES.forEach((locale) => {
-    CATEGORIES.forEach((cat) => {
-      params.push({
-        locale: locale.code,
-        slug: cat.slug,
-      });
-    });
-  });
-
-  return params;
-}
+// Revalidate every 60 seconds (Fast dynamic SSR from database)
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,
