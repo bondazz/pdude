@@ -54,6 +54,19 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      { source: '/images/Mascot/Czech.webp', destination: '/images/Mascot/czech.webp' },
+      { source: '/images/Mascot/Danish.webp', destination: '/images/Mascot/danish.webp' },
+      { source: '/images/Mascot/Finnish.webp', destination: '/images/Mascot/finnish.webp' },
+      { source: '/images/Mascot/French.webp', destination: '/images/Mascot/french.webp' },
+      { source: '/images/Mascot/German.webp', destination: '/images/Mascot/german.webp' },
+      { source: '/images/Mascot/Greek.webp', destination: '/images/Mascot/greek.webp' },
+      { source: '/images/Mascot/Hebrew.webp', destination: '/images/Mascot/hebrew.webp' },
+      { source: '/images/Mascot/Spanish.webp', destination: '/images/Mascot/spanish.webp' },
+      { source: '/images/mascot/:path*', destination: '/images/Mascot/:path*' },
+    ];
+  },
 };
 
 export default nextConfig;
