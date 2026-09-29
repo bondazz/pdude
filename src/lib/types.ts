@@ -1,4 +1,7 @@
-export type Locale = 'en' | 'es' | 'de' | 'fr' | 'it' | 'pt' | 'ru' | 'tr' | 'az' | 'ja' | 'zh' | 'ar';
+export type Locale =
+  | 'ar' | 'cs' | 'da' | 'de' | 'el' | 'en' | 'es' | 'fi' | 'fr' | 'he'
+  | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ko' | 'nl' | 'no' | 'pl'
+  | 'pt' | 'ro' | 'ru' | 'sl' | 'sv' | 'th' | 'tr' | 'vi' | 'zh' | 'az';
 
 export interface SiteItem {
   id: string;
@@ -20,10 +23,10 @@ export interface SiteItem {
   isNew?: boolean;
   rankChange?: 'up' | 'down' | 'same';
   badge?: string;
-  shortDescription: Record<Locale, string>;
-  longReview: Record<Locale, string>;
-  pros: Record<Locale, string[]>;
-  cons: Record<Locale, string[]>;
+  shortDescription: Partial<Record<Locale, string>> & { en: string };
+  longReview: Partial<Record<Locale, string>> & { en: string };
+  pros: Partial<Record<Locale, string[]>> & { en: string[] };
+  cons: Partial<Record<Locale, string[]>> & { en: string[] };
   scores: {
     safety: number; // e.g. 10
     mobile: number; // e.g. 9.8
@@ -39,17 +42,17 @@ export interface SiteItem {
 export interface CategoryItem {
   id: string;
   slug: string;
-  name: Record<Locale, string>;
-  tagline: Record<Locale, string>;
-  description: Record<Locale, string>;
-  seoTitle: Record<Locale, string>;
-  seoDescription: Record<Locale, string>;
+  name: Partial<Record<Locale, string>> & { en: string };
+  tagline: Partial<Record<Locale, string>> & { en: string };
+  description: Partial<Record<Locale, string>> & { en: string };
+  seoTitle: Partial<Record<Locale, string>> & { en: string };
+  seoDescription: Partial<Record<Locale, string>> & { en: string };
   icon: string;
   colorRgb: string; // e.g. "255, 151, 1"
   hexColor: string; // e.g. "#ff9701"
   faqs: Array<{
-    question: Record<Locale, string>;
-    answer: Record<Locale, string>;
+    question: Partial<Record<Locale, string>> & { en: string };
+    answer: Partial<Record<Locale, string>> & { en: string };
   }>;
 }
 
