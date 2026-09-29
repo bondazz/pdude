@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 120" width="100%" height="100%">
+  <defs>
+    <!-- Drop Shadow Filter -->
+    <filter id="logoShadow" x="-10%" y="-15%" width="130%" height="150%">
+      <feDropShadow dx="0" dy="7" stdDeviation="3.5" flood-color="#000000" flood-opacity="0.55" />
+    </filter>
+
+    <!-- White Glossy Gradient for PORN and .NET.CO -->
+    <linearGradient id="whiteLetterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="25%" stop-color="#ffffff" />
+      <stop offset="65%" stop-color="#f0f3f8" />
+      <stop offset="100%" stop-color="#cfd7e6" />
+    </linearGradient>
+
+    <!-- Golden/Orange 3D Gradient for HUB (Matching DUDE in reference) -->
+    <linearGradient id="hubGoldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fffb7a" />
+      <stop offset="20%" stop-color="#ffcf00" />
+      <stop offset="55%" stop-color="#ff8e00" />
+      <stop offset="85%" stop-color="#f06000" />
+      <stop offset="100%" stop-color="#c94400" />
+    </linearGradient>
+
+    <!-- Hair Gradient for Avatar -->
+    <linearGradient id="avatarHairGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffa022" />
+      <stop offset="100%" stop-color="#e65100" />
+    </linearGradient>
+
+    <!-- Top Gloss Reflection Gradient -->
+    <linearGradient id="topGlossGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
+    </linearGradient>
+  </defs>
+
+  <g filter="url(#logoShadow)">
+    <!-- ============================================================== -->
+    <!-- 3D CARTOON EXTRUSION & OUTLINE SYSTEM                          -->
+    <!-- Downward stepped layers creating smooth solid 3D depth          -->
+    <!-- ============================================================== -->
+
+    <!-- Base 3D Shadow/Contour (Bottom-most dark chocolate depth) -->
+    <g font-family="'Arial Black', 'Montserrat Black', Impact, sans-serif" font-weight="900" stroke-linejoin="round" stroke-linecap="round">
+      <!-- Deepest Bottom Contour -->
+      <g stroke="#3a1500" stroke-width="21" fill="#3a1500">
+        <text x="14" y="87" font-size="70" letter-spacing="-0.5px">PORN</text>
+        <text x="240" y="87" font-size="72" letter-spacing="-0.5px">HUB</text>
+        <text x="408" y="87" font-size="52" letter-spacing="-0.5px">.NET.CO</text>
+      </g>
+
+      <!-- 3D Extrusion Step 4 (Deep Terracotta) -->
+      <g stroke="#612400" stroke-width="19" fill="#612400">
+        <text x="14" y="85.5" font-size="70" letter-spacing="-0.5px">PORN</text>
+        <text x="240" y="85.5" font-size="72" letter-spacing="-0.5px">HUB</text>
+        <text x="408" y="85.5" font-size="52" letter-spacing="-0.5px">.NET.CO</text>
+      </g>
+
+      <!-- 3D Extrusion Step 3 (Rich Warm Brown) -->
+      <g stroke="#803300" stroke-width="17" fill="#803300">
+        <text x="14" y="84" font-size="70" letter-spacing="-0.5px">PORN</text>
+        <text x="240" y="84" font-size="72" letter-spacing="-0.5px">HUB</text>
+        <text x="408" y="84" font-size="52" letter-spacing="-0.5px">.NET.CO</text>
+      </g>
+
+      <!-- 3D Extrusion Step 2 (Deep Burnt Orange) -->
+      <g stroke="#a64400" stroke-width="15" fill="#a64400">
+        <text x="14" y="82.5" font-size="70" letter-spacing="-0.5px">PORN</text>
+        <text x="240" y="82.5" font-size="72" letter-spacing="-0.5px">HUB</text>
+        <text x="408" y="82.5" font-size="52" letter-spacing="-0.5px">.NET.CO</text>
+      </g>
+
+      <!-- 3D Extrusion Step 1 (Warm Amber Extrusion) -->
+      <g stroke="#c75500" stroke-width="13" fill="#c75500">
+        <text x="14" y="81" font-size="70" letter-spacing="-0.5px">PORN</text>
+        <text x="240" y="81" font-size="72" letter-spacing="-0.5px">HUB</text>
+        <text x="408" y="81" font-size="52" letter-spacing="-0.5px">.NET.CO</text>
+      </g>
+
+      <!-- Front Outline - Thick Bright Orange Contour (Unifies all letters) -->
+      <g stroke="#f27400" stroke-width="11" fill="#f27400">
+        <text x="14" y="79" font-size="70" letter-spacing="-0.5px">PORN</text>
+        <text x="240" y="79" font-size="72" letter-spacing="-0.5px">HUB</text>
+        <text x="408" y="79" font-size="52" letter-spacing="-0.5px">.NET.CO</text>
+      </g>
+
+      <!-- Inner Crisp Outline (Slightly lighter orange for bevel separation) -->
+      <g stroke="#ff9000" stroke-width="7" fill="#ff9000">
+        <text x="14" y="79" font-size="70" letter-spacing="-0.5px">PORN</text>
+        <text x="240" y="79" font-size="72" letter-spacing="-0.5px">HUB</text>
+        <text x="408" y="79" font-size="52" letter-spacing="-0.5px">.NET.CO</text>
+      </g>
+    </g>
+
+    <!-- ============================================================== -->
+    <!-- LETTER FRONT FACES WITH GLOSSY GRADIENTS                       -->
+    <!-- ============================================================== -->
+
+    <!-- "PORN" in Glossy White -->
+    <g font-family="'Arial Black', 'Montserrat Black', Impact, sans-serif" font-weight="900">
+      <text x="14" y="79" font-size="70" letter-spacing="-0.5px" fill="url(#whiteLetterGrad)" stroke="#ff7c00" stroke-width="1.8" stroke-linejoin="round">PORN</text>
+    </g>
+
+    <!-- "HUB" in Glossy Golden-Orange (Matching DUDE) -->
+    <g font-family="'Arial Black', 'Montserrat Black', Impact, sans-serif" font-weight="900">
+      <text x="240" y="79" font-size="72" letter-spacing="-0.5px" fill="url(#hubGoldGrad)" stroke="#ffe550" stroke-width="1.5" stroke-linejoin="round">HUB</text>
+    </g>
+
+    <!-- ".NET.CO" in Glossy White -->
+    <g font-family="'Arial Black', 'Montserrat Black', Impact, sans-serif" font-weight="900">
+      <text x="408" y="79" font-size="52" letter-spacing="-0.5px" fill="url(#whiteLetterGrad)" stroke="#ff7c00" stroke-width="1.6" stroke-linejoin="round">.NET.CO</text>
+    </g>
+
+    <!-- ============================================================== -->
+    <!-- AVATAR BADGE INSIDE THE 'O' OF 'PORN'                          -->
+    <!-- ============================================================== -->
+    <g transform="translate(94, 53)">
+      <!-- Outer White Border Ring with Orange Outline -->
+      <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#f27400" stroke-width="2.5" />
+      <circle cx="0" cy="0" r="16.5" fill="#fce4cb" />
+
+      <!-- Spiky Blonde/Orange Hair -->
+      <path d="M -12 -5 Q -14 -17 -2 -14 Q 0 -19 9 -13 Q 15 -14 13 -4 Q 16 2 12 7 Q -4 10 -11 6 Z" fill="url(#avatarHairGrad)" stroke="#7a2a00" stroke-width="0.8" />
+
+      <!-- Cute Face Skin -->
+      <ellipse cx="0" cy="2" rx="11" ry="10" fill="#fedbb5" />
+
+      <!-- Front Hair Tuft -->
+      <path d="M -9 -7 Q -3 -15 3 -8 Q 8 -13 9 -5 Q 2 -8 -9 -7 Z" fill="#ffb433" />
+
+      <!-- Stylish Black Eyeglasses with Glare Reflection -->
+      <rect x="-10" y="-1" width="8" height="6.5" rx="1.5" fill="#202020" stroke="#101010" stroke-width="0.6" />
+      <rect x="2" y="-1" width="8" height="6.5" rx="1.5" fill="#202020" stroke="#101010" stroke-width="0.6" />
+      <line x1="-2" y1="2" x2="2" y2="2" stroke="#202020" stroke-width="1" />
+      <!-- White Glare Lines on Glasses -->
+      <line x1="-8.5" y1="0.5" x2="-4.5" y2="4.5" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.85" />
+      <line x1="3.5" y1="0.5" x2="7.5" y2="4.5" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.85" />
+
+      <!-- Rosy Cheeks -->
+      <ellipse cx="-7" cy="6" rx="2" ry="1.2" fill="#ff8c8c" opacity="0.6" />
+      <ellipse cx="7" cy="6" rx="2" ry="1.2" fill="#ff8c8c" opacity="0.6" />
+
+      <!-- Happy Smile -->
+      <path d="M -4 7.5 Q 0 11.5 4 7.5" stroke="#802a00" stroke-width="1.4" stroke-linecap="round" fill="#c43b00" />
+    </g>
+
+    <!-- ============================================================== -->
+    <!-- SPECULAR CANDY GLOSS HIGHLIGHTS (Curved Glint Along Letter Tops)-->
+    <!-- ============================================================== -->
+
+    <!-- Gloss on 'P' -->
+    <path d="M 23 37 Q 38 31 52 35 Q 56 42 48 44 Q 35 39 23 44 Z" fill="url(#topGlossGrad)" />
+
+    <!-- Gloss on 'R' -->
+    <path d="M 137 37 Q 152 31 166 35 Q 170 42 162 44 Q 149 39 137 44 Z" fill="url(#topGlossGrad)" />
+
+    <!-- Gloss on 'N' -->
+    <path d="M 183 37 Q 197 32 208 34 L 208 43 Q 197 40 183 45 Z" fill="url(#topGlossGrad)" />
+    <path d="M 221 37 Q 229 33 235 35 L 235 44 Q 228 41 221 44 Z" fill="url(#topGlossGrad)" />
+
+    <!-- Brilliant Yellow-White Specular Shine on 'HUB' (Candy Bevel Glare) -->
+    <!-- Gloss on 'H' -->
+    <path d="M 249 36 L 261 36 L 261 46 Q 255 43 249 46 Z" fill="#ffffff" opacity="0.75" />
+    <path d="M 285 36 L 297 36 L 297 46 Q 291 43 285 46 Z" fill="#ffffff" opacity="0.75" />
+
+    <!-- Gloss on 'U' (Curved shine) -->
+    <path d="M 307 36 L 319 36 L 319 46 Q 313 43 307 46 Z" fill="#ffffff" opacity="0.75" />
+    <path d="M 345 36 L 357 36 L 357 46 Q 351 43 345 46 Z" fill="#ffffff" opacity="0.75" />
+    <path d="M 314 69 Q 332 77 350 69 Q 345 74 332 75 Q 319 74 314 69 Z" fill="#ffffff" opacity="0.6" />
+
+    <!-- Gloss on 'B' -->
+    <path d="M 367 36 Q 388 32 400 37 Q 403 44 394 46 Q 383 40 367 44 Z" fill="#ffffff" opacity="0.75" />
+    <path d="M 367 56 Q 390 52 402 57 Q 405 64 395 66 Q 383 60 367 64 Z" fill="#ffffff" opacity="0.6" />
+
+    <!-- Gloss on '.NET.CO' -->
+    <circle cx="417" cy="74" r="3.5" fill="#ffffff" opacity="0.8" />
+    <path d="M 432 49 Q 442 45 450 48 L 450 54 Q 441 52 432 55 Z" fill="url(#topGlossGrad)" />
+    <path d="M 463 49 Q 478 45 486 48 L 486 54 Q 477 52 463 55 Z" fill="url(#topGlossGrad)" />
+    <path d="M 502 49 Q 515 45 524 48 L 524 54 Q 515 52 502 55 Z" fill="url(#topGlossGrad)" />
+    <circle cx="536" cy="74" r="3.5" fill="#ffffff" opacity="0.8" />
+    <path d="M 548 49 Q 563 45 572 49 Q 574 54 567 56 Q 558 52 548 55 Z" fill="url(#topGlossGrad)" />
+    <path d="M 581 49 Q 598 44 608 49 Q 610 54 602 56 Q 593 52 581 55 Z" fill="url(#topGlossGrad)" />
+  </g>
+</svg>
