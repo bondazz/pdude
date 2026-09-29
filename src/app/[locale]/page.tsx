@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { getCategories, getSitesByCategory } from '@/lib/dataService';
-import { getTranslation, isValidLocale } from '@/lib/i18n';
+import { getTranslation, isValidLocale, getMascotImage } from '@/lib/i18n';
 import { Locale } from '@/lib/types';
 import { generateHreflangAlternates, generateWebsiteSchema, SITE_DOMAIN } from '@/lib/seo';
 import CategoryCard from '@/components/CategoryCard';
@@ -46,7 +46,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
         {
-          url: `${SITE_DOMAIN}/images/thepornhub_net_co.webp`,
+          url: `${SITE_DOMAIN}${getMascotImage(locale)}`,
           width: 1024,
           height: 1024,
           alt: 'PornHub.net.co Reviews 2026',
@@ -79,7 +79,7 @@ export default async function HomePage({
 }) {
   const resolvedParams = await params;
   const locale: Locale = isValidLocale(resolvedParams.locale) ? (resolvedParams.locale as Locale) : 'en';
-  const websiteSchema = generateWebsiteSchema();
+  const websiteSchema = generateWebsiteSchema(locale);
 
   // Retrieve cached categories and sites in < 1ms
   const categories = await getCategories();

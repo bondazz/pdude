@@ -1,4 +1,4 @@
-import { LOCALES } from './i18n';
+import { LOCALES, getMascotImage } from './i18n';
 import { CategoryItem, Locale, SiteItem } from './types';
 
 export const SITE_DOMAIN = process.env.NEXT_PUBLIC_SITE_URL || 'https://pornhub.net.co';
@@ -35,7 +35,7 @@ export function generateHreflangAlternates(pathWithoutLocale: string) {
   return languages;
 }
 
-export function generateWebsiteSchema() {
+export function generateWebsiteSchema(locale: Locale = 'en') {
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -46,7 +46,7 @@ export function generateWebsiteSchema() {
         url: `${SITE_DOMAIN}/`,
         logo: {
           '@type': 'ImageObject',
-          url: `${SITE_DOMAIN}/images/thepornhub_net_co.webp`,
+          url: `${SITE_DOMAIN}${getMascotImage(locale)}`,
           width: 1024,
           height: 1024,
         },

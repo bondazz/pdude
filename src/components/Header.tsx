@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { LOCALES, getLocalizedUrl } from '@/lib/i18n';
+import { LOCALES, getLocalizedUrl, getMascotImage } from '@/lib/i18n';
 import { Locale } from '@/lib/types';
 import { Search, Moon, Sun, Mail, Video, Menu, X } from 'lucide-react';
 
@@ -49,6 +49,7 @@ export default function Header({ locale }: HeaderProps) {
   };
 
   const currentLocaleConfig = LOCALES.find((l) => l.code === locale) || LOCALES[0];
+  const mascotImage = getMascotImage(locale);
 
   // Clean relative path without locale prefix so language switcher retains current page
   const cleanRelativePath = (() => {
@@ -290,11 +291,11 @@ export default function Header({ locale }: HeaderProps) {
         <div className="header-col header-col-mascot">
           <Link className="header-logo-maskot-half" href={getLocalizedUrl('', locale)} aria-label="PornHub.net.co Mascot" draggable={false} tabIndex={-1}>
             <picture>
-              <source media="(min-width: 992px)" srcSet="/images/thepornhub_net_co.webp" />
+              <source media="(min-width: 992px)" srcSet={mascotImage} />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 className="header-logo-maskot-half-img"
-                src="/images/thepornhub_net_co.webp"
+                src={mascotImage}
                 alt="PornHub.net.co Mascot"
                 fetchPriority="high"
                 decoding="sync"

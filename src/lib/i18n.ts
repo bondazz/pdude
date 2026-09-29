@@ -462,3 +462,14 @@ export function getLocalizedUrl(path: string = '', locale: Locale = 'en'): strin
   }
   return cleanPath ? `/${locale}/${cleanPath}` : `/${locale}`;
 }
+
+export function getMascotImage(locale: Locale): string {
+  const mascotMap: Partial<Record<Locale, string>> = {
+    ar: '/images/Mascot/arabic.webp',
+    az: '/images/Mascot/azerbaijan.webp',
+    tr: '/images/Mascot/turkey.webp',
+    en: '/images/Mascot/england.webp',
+  };
+  return mascotMap[locale] || '/images/Mascot/england.webp';
+}
+

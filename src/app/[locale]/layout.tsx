@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Saira } from 'next/font/google';
-import { LOCALES, isValidLocale } from '@/lib/i18n';
+import { LOCALES, isValidLocale, getMascotImage } from '@/lib/i18n';
 import { Locale } from '@/lib/types';
 import Script from 'next/script';
 import Header from '@/components/Header';
@@ -40,6 +40,7 @@ export default async function LocaleLayout({
   const locale: Locale = isValidLocale(resolvedParams.locale) ? (resolvedParams.locale as Locale) : 'en';
   const localeConfig = LOCALES.find((l) => l.code === locale) || LOCALES[0];
   const isRtl = localeConfig.dir === 'rtl';
+  const mascotImage = getMascotImage(locale);
 
   return (
     <html lang={locale} dir={localeConfig.dir} className={saira.variable} suppressHydrationWarning>
@@ -53,7 +54,7 @@ export default async function LocaleLayout({
         <link rel="manifest" href="/site.webmanifest" />
         {/* Instant 0ms Preloads for Critical Images */}
         <link rel="preload" as="image" href="/images/background.webp" type="image/webp" fetchPriority="high" />
-        <link rel="preload" as="image" href="/images/thepornhub_net_co.webp" type="image/webp" fetchPriority="high" />
+        <link rel="preload" as="image" href={mascotImage} type="image/webp" fetchPriority="high" />
 
         {/* Critical Instant Paint Inline CSS - Eliminates ANY white flash or layout jump on Hard Refresh */}
         <style dangerouslySetInnerHTML={{ __html: `
