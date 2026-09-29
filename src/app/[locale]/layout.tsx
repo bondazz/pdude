@@ -3,9 +3,12 @@ import type { Metadata, Viewport } from 'next';
 import { Saira } from 'next/font/google';
 import { LOCALES, isValidLocale } from '@/lib/i18n';
 import { Locale } from '@/lib/types';
+import Script from 'next/script';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import '@/app/globals.css';
+
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-504628784';
 
 const saira = Saira({
   subsets: ['latin'],
@@ -70,6 +73,30 @@ export default async function LocaleLayout({
         <Header locale={locale} />
         <main className="main-content">{children}</main>
         <Footer locale={locale} />
+
+        {/* Google Analytics 4 (GA4) */}
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+            />
+            <Script
+              id="google-analytics-init"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${GA_MEASUREMENT_ID}', {
+                    page_path: window.location.pathname,
+                  });
+                `,
+              }}
+            />
+          </>
+        )}
       </body>
     </html>
   );
