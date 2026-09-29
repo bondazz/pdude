@@ -190,14 +190,16 @@ export default function CategoryCard({ category, sites, locale, columnIndex = 1 
                 <span className="site-name-text">{site.name}</span>
               </a>
 
-              {/* Review Button */}
+              {/* Review Button with SEO anchor text */}
               <Link
                 className="review"
                 href={`/${locale}/review/${site.slug}`}
-                aria-label="Review button"
+                aria-label={`${site.name} Review`}
                 data-visit-site-id={site.id}
                 title={`Review of ${site.name}`}
-              />
+              >
+                <span className="sr-only">{site.name} Review</span>
+              </Link>
 
               {/* Crawlers / SEO description inside DOM */}
               <p className="desc">
