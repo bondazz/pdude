@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  Bot,
 } from 'lucide-react';
 import './admin.css';
 
@@ -70,6 +71,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const navLinks = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/scraper', label: 'AI Scraper Bot', icon: Bot },
     { href: '/admin/sites', label: 'Saytlar', icon: Globe },
     { href: '/admin/categories', label: 'Kateqoriyalar', icon: FolderTree },
     { href: '/admin/blogs', label: 'Bloq Yazıları', icon: BookOpen },
