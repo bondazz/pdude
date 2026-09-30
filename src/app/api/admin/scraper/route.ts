@@ -3,10 +3,32 @@ import { getAdminSession } from '@/lib/adminAuth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import https from 'https';
 import http from 'http';
+import fs from 'fs';
+import path from 'path';
 import * as cheerio from 'cheerio';
 import { OpenAI } from 'openai';
 
 export const maxDuration = 60; // Max allowed per API call
+
+function getOpenAIApiKey(): string {
+  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.startsWith('sk-')) {
+    return process.env.OPENAI_API_KEY.trim();
+  }
+  try {
+    const candidateFiles = ['.env.local', '.env', '.env.development', '.env.production'];
+    for (const file of candidateFiles) {
+      const envPath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), file);
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf-8');
+        const match = content.match(/OPENAI_API_KEY\s*=\s*(sk-[^\r\n"'\s]+)/);
+        if (match && match[1]) {
+          return match[1].trim();
+        }
+      }
+    }
+  } catch {}
+  return '';
+}
 
 export const ALL_LOCALES = [
   { code: 'en', name: 'English', getUrl: (slug: string) => `https://theporndude.com/${slug}` },
@@ -159,10 +181,10 @@ export async function POST(req: NextRequest) {
     const localeConfig = ALL_LOCALES.find((l) => l.code === targetCode) || ALL_LOCALES[0];
     const fetchUrl = localeConfig.getUrl(slug);
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = getOpenAIApiKey();
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'OPENAI_API_KEY mühit dəyişəni təyin olunmayıb.' },
+        { error: 'OPENAI_API_KEY tapılmadı. Zəhmət olmasa .env.local faylını yoxlayın.' },
         { status: 500 }
       );
     }
