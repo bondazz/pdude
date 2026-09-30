@@ -6,7 +6,40 @@ import http from 'http';
 import * as cheerio from 'cheerio';
 import { OpenAI } from 'openai';
 
-export const maxDuration = 60; // Allow up to 60 seconds for AI rewrite
+export const maxDuration = 60; // Max allowed per API call
+
+export const ALL_LOCALES = [
+  { code: 'en', name: 'English', getUrl: (slug: string) => `https://theporndude.com/${slug}` },
+  { code: 'az', name: 'Azərbaycan dili', getUrl: (slug: string) => `https://theporndude.com/${slug}` },
+  { code: 'ar', name: 'Arabic', getUrl: (slug: string) => `https://theporndude.com/ar/${slug}` },
+  { code: 'cs', name: 'Czech', getUrl: (slug: string) => `https://theporndude.com/cs/${slug}` },
+  { code: 'da', name: 'Danish', getUrl: (slug: string) => `https://theporndude.com/da/${slug}` },
+  { code: 'de', name: 'German', getUrl: (slug: string) => `https://porndudedeutsch.com/${slug}` },
+  { code: 'el', name: 'Greek', getUrl: (slug: string) => `https://theporndude.com/el/${slug}` },
+  { code: 'es', name: 'Spanish', getUrl: (slug: string) => `https://theporndude.com/es/${slug}` },
+  { code: 'fi', name: 'Finnish', getUrl: (slug: string) => `https://theporndude.com/fi/${slug}` },
+  { code: 'fr', name: 'French', getUrl: (slug: string) => `https://theporndude.com/fr/${slug}` },
+  { code: 'he', name: 'Hebrew', getUrl: (slug: string) => `https://theporndude.com/he/${slug}` },
+  { code: 'hi', name: 'Hindi', getUrl: (slug: string) => `https://theporndude.com/hi/${slug}` },
+  { code: 'hr', name: 'Croatian', getUrl: (slug: string) => `https://theporndude.com/hr/${slug}` },
+  { code: 'hu', name: 'Hungarian', getUrl: (slug: string) => `https://theporndude.com/hu/${slug}` },
+  { code: 'id', name: 'Indonesian', getUrl: (slug: string) => `https://theporndude.com/id/${slug}` },
+  { code: 'it', name: 'Italian', getUrl: (slug: string) => `https://theporndude.com/it/${slug}` },
+  { code: 'ja', name: 'Japanese', getUrl: (slug: string) => `https://theporndude.com/ja/${slug}` },
+  { code: 'ko', name: 'Korean', getUrl: (slug: string) => `https://theporndude.com/ko/${slug}` },
+  { code: 'nl', name: 'Dutch', getUrl: (slug: string) => `https://theporndude.com/nl/${slug}` },
+  { code: 'no', name: 'Norwegian', getUrl: (slug: string) => `https://theporndude.com/no/${slug}` },
+  { code: 'pl', name: 'Polish', getUrl: (slug: string) => `https://theporndude.com/pl/${slug}` },
+  { code: 'pt', name: 'Portuguese', getUrl: (slug: string) => `https://theporndude.com/pt/${slug}` },
+  { code: 'ro', name: 'Romanian', getUrl: (slug: string) => `https://theporndude.com/ro/${slug}` },
+  { code: 'ru', name: 'Russian', getUrl: (slug: string) => `https://theporndude.com/ru/${slug}` },
+  { code: 'sl', name: 'Slovenian', getUrl: (slug: string) => `https://theporndude.com/sl/${slug}` },
+  { code: 'sv', name: 'Swedish', getUrl: (slug: string) => `https://theporndude.com/sv/${slug}` },
+  { code: 'th', name: 'Thai', getUrl: (slug: string) => `https://theporndude.com/th/${slug}` },
+  { code: 'tr', name: 'Turkish', getUrl: (slug: string) => `https://theporndude.com/tr/${slug}` },
+  { code: 'vi', name: 'Vietnamese', getUrl: (slug: string) => `https://theporndude.com/vi/${slug}` },
+  { code: 'zh', name: 'Chinese', getUrl: (slug: string) => `https://theporndude.com/zh/${slug}` },
+];
 
 function fetchPageSource(urlStr: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -35,7 +68,7 @@ function fetchPageSource(urlStr: string): Promise<string> {
           'Upgrade-Insecure-Requests': '1',
           'Cache-Control': 'no-cache',
         },
-        timeout: 20000,
+        timeout: 25000,
       };
 
       const req = client.request(options, (res) => {
@@ -68,23 +101,46 @@ function fetchPageSource(urlStr: string): Promise<string> {
   });
 }
 
-function parseSlug(urlStr: string): string {
+function parseSlug(input: string): string {
   try {
-    const u = new URL(urlStr);
-    const parts = u.pathname.split('/').filter(Boolean);
-    if (parts.length === 0) return 'top-porn-tube-sites';
-    const knownLocales = [
-      'ar', 'cs', 'da', 'de', 'el', 'en', 'es', 'fi', 'fr', 'he',
-      'hi', 'hr', 'hu', 'id', 'it', 'ja', 'ko', 'nl', 'no', 'pl',
-      'pt', 'ro', 'ru', 'sl', 'sv', 'th', 'tr', 'vi', 'zh', 'az',
-    ];
-    if (knownLocales.includes(parts[0]) && parts.length > 1) {
-      return parts[1];
+    if (input.startsWith('http')) {
+      const u = new URL(input);
+      const parts = u.pathname.split('/').filter(Boolean);
+      if (parts.length === 0) return 'top-porn-tube-sites';
+      const codes = ALL_LOCALES.map((l) => l.code);
+      if (codes.includes(parts[0]) && parts.length > 1) {
+        return parts[1];
+      }
+      return parts[parts.length - 1];
     }
-    return parts[parts.length - 1];
+    return input.trim();
   } catch {
     return 'top-porn-tube-sites';
   }
+}
+
+export async function GET(req: NextRequest) {
+  const session = await getAdminSession();
+  if (!session.authorized) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const inputUrl = searchParams.get('url') || 'https://theporndude.com/top-porn-tube-sites';
+  const slug = parseSlug(inputUrl);
+
+  const localesWithUrls = ALL_LOCALES.map((l) => ({
+    code: l.code,
+    name: l.name,
+    targetUrl: l.getUrl(slug),
+  }));
+
+  return NextResponse.json({
+    success: true,
+    slug,
+    totalLocales: localesWithUrls.length,
+    locales: localesWithUrls,
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -95,9 +151,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const url = body.url || 'https://theporndude.com/top-porn-tube-sites';
-    const locale = body.locale || 'en';
+    const inputUrl = body.url || 'https://theporndude.com/top-porn-tube-sites';
+    const slug = parseSlug(inputUrl);
+    const targetCode = body.locale || 'en';
     const saveToDb = body.saveToDb !== false;
+
+    const localeConfig = ALL_LOCALES.find((l) => l.code === targetCode) || ALL_LOCALES[0];
+    const fetchUrl = localeConfig.getUrl(slug);
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -108,112 +168,123 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 1: Ctrl+U Fetch
-    const rawHtml = await fetchPageSource(url);
+    const rawHtml = await fetchPageSource(fetchUrl);
 
-    // Step 2: Cheerio extract
+    // Step 2: Extract SEO & Content
     const $ = cheerio.load(rawHtml);
+    const seoTitle = $('title').text().trim() || slug;
+    const seoDescription = $('meta[name="description"]').attr('content')?.trim() || '';
+    const h1 = $('h1').text().trim() || slug.replace(/-/g, ' ');
+
     let descContainer = $('.category-desc.scrollbox.custom-scrollbar');
     if (!descContainer.length) {
       descContainer = $('.category-desc');
     }
 
-    if (!descContainer.length) {
+    const rawDescHtml = descContainer.html()?.trim() || '';
+    if (!rawDescHtml) {
       return NextResponse.json(
-        { error: 'category-desc bloku səhifədə tapılmadı.' },
+        { error: `category-desc bloku ${localeConfig.name} (${targetCode}) səhifəsində tapılmadı.` },
         { status: 400 }
       );
     }
 
-    const rawDescHtml = descContainer.html()?.trim() || '';
-    const rawText = descContainer.text().trim();
-    const slug = parseSlug(url);
-
-    // Step 3: OpenAI Human Rewrite
+    // Step 3: OpenAI 100/100 Human Rewrite
     const openai = new OpenAI({ apiKey });
-    const languageNames: Record<string, string> = {
-      en: 'English',
-      az: 'Azerbaijani',
-      tr: 'Turkish',
-      de: 'German',
-      fr: 'French',
-      es: 'Spanish',
-      it: 'Italian',
-      ru: 'Russian',
-      pt: 'Portuguese',
-    };
-    const targetLang = languageNames[locale] || 'English';
-
     const systemPrompt = `You are an elite, candid, seasoned adult entertainment directory reviewer and master copywriter writing for "PornHub.net.co" (PornHub Directory).
-Your writing style is 100% HUMAN (tested 100/100 by human detection benchmarks), witty, unapologetic, highly engaging, and street-smart.
+Your writing style is 100% HUMAN (scored 100/100 by human authenticity benchmarks), witty, confident, highly engaging, and street-smart.
 
 STRICT EDITORIAL RULES:
-1. ZERO AI WORDS & NO ROBOTIC CLICHÉS:
+1. ZERO AI CLICHÉS:
    NEVER use: "dive into", "delve", "testament", "tapestry", "embark", "furthermore", "moreover", "in conclusion", "it's essential to", "realm", "plethora", "beacon", "game-changer", "meticulously curated".
 2. BRANDING:
    Always replace "ThePornDude" or "PornDude" with "PornHub.net.co" or "our directory".
 3. STRUCTURAL ACCURACY:
-   Preserve every question / H3 heading concept and paragraph topic in exact chronological order, but completely reinvent the wording from scratch so there is zero plagiarism.
+   Preserve every question / H3 heading concept and paragraph topic in exact order, but completely reinvent the wording from scratch so there is zero plagiarism.
 4. FORMATTING:
-   Output clean semantic HTML (using <h3>, <p>, <strong> where appropriate) matching the original structure so it renders flawlessly in web browsers. Do not wrap in markdown code blocks.
-5. LANGUAGE:
-   The output MUST be written in ${targetLang}.`;
+   Output clean semantic HTML (using <h3>, <p>, <strong> where appropriate).
+5. TARGET LANGUAGE:
+   The output MUST be written naturally in ${localeConfig.name}.
+   Respond with a JSON object containing:
+   {
+     "categoryTitle": "Rewritten punchy Category Title",
+     "seoTitle": "Rewritten SEO Title under 65 chars (e.g. Best ... 2026 | PornHub.net.co)",
+     "seoDescription": "Rewritten click-worthy meta description under 155 chars",
+     "content": "Rewritten full semantic HTML content with <h3> and <p> blocks"
+   }`;
+
+    const userPrompt = `Input Data to Rewrite in ${localeConfig.name}:
+Category Name: ${h1}
+Original SEO Title: ${seoTitle}
+Original SEO Description: ${seoDescription}
+Raw Text Content:
+${rawDescHtml}
+`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
+      response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Rewrite the following category description text into 100% human-written, authentic copy for PornHub.net.co:\n\n${rawDescHtml}` },
+        { role: 'user', content: userPrompt },
       ],
       temperature: 0.85,
     });
 
-    let rewrittenHtml = response.choices[0]?.message?.content?.trim() || '';
-    rewrittenHtml = rewrittenHtml.replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    let rewrittenData: any = {};
+    try {
+      rewrittenData = JSON.parse(response.choices[0].message.content || '{}');
+    } catch {
+      rewrittenData = {
+        categoryTitle: h1,
+        seoTitle,
+        seoDescription,
+        content: response.choices[0].message.content || '',
+      };
+    }
 
-    // Step 4: Save to Supabase if requested
+    // Step 4: Save to Supabase
     let saved = false;
     if (saveToDb) {
       const supabase = getSupabaseAdmin();
       const { data: catRecord } = await supabase
         .from('categories')
-        .select('id, slug, description, name')
+        .select('*')
         .eq('slug', slug)
         .single();
 
-      if (!catRecord) {
-        await supabase.from('categories').insert({
+      const nameMap = catRecord?.name || {};
+      const taglineMap = catRecord?.tagline || {};
+      const descMap = catRecord?.description || {};
+
+      nameMap[targetCode] = rewrittenData.categoryTitle || h1;
+      taglineMap[targetCode] = rewrittenData.seoDescription || seoDescription;
+      descMap[targetCode] = rewrittenData.content || rawDescHtml;
+
+      const { error: upsertErr } = await supabase.from('categories').upsert(
+        {
           id: slug,
           slug,
-          name: { [locale]: slug.replace(/-/g, ' ').toUpperCase() },
-          description: { [locale]: rewrittenHtml },
-          tagline: { [locale]: `Best verified ${slug.replace(/-/g, ' ')} of 2026` },
+          name: nameMap,
+          tagline: taglineMap,
+          description: descMap,
           updated_at: new Date().toISOString(),
-        });
-      } else {
-        const currentDesc = (catRecord.description && typeof catRecord.description === 'object')
-          ? catRecord.description
-          : {};
-        currentDesc[locale] = rewrittenHtml;
+        },
+        { onConflict: 'slug' }
+      );
 
-        await supabase
-          .from('categories')
-          .update({
-            description: currentDesc,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('slug', slug);
+      if (!upsertErr) {
+        saved = true;
       }
-      saved = true;
     }
 
     return NextResponse.json({
       success: true,
       slug,
-      locale,
-      url,
-      rawHtmlLength: rawDescHtml.length,
-      rawTextPreview: rawText.slice(0, 300) + '...',
-      rewrittenHtml,
+      locale: targetCode,
+      localeName: localeConfig.name,
+      fetchUrl,
+      rewrittenData,
       saved,
     });
   } catch (err: any) {
