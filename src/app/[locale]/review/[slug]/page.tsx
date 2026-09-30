@@ -338,7 +338,7 @@ export default async function ReviewPage({
           {/* Long Editorial Breakdown / Verdict */}
           <div className="review-editorial-section">
             <h2 className="review-section-title">
-              ThePornDude&apos;s Editorial Verdict
+              PornHub.net.co Editorial Verdict
             </h2>
             <div className="review-editorial-prose">
               <p>{site.longReview[locale] || site.longReview.en}</p>

@@ -149,8 +149,53 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const inputUrl = searchParams.get('url') || 'https://theporndude.com/top-porn-tube-sites';
+  const action = searchParams.get('action');
   const slug = parseSlug(inputUrl);
 
+  // Action: Extract site cards from category page
+  if (action === 'sites') {
+    try {
+      const rawHtml = await fetchPageSource(`https://theporndude.com/${slug}`);
+      const $ = cheerio.load(rawHtml);
+      const cards = $('.review-card');
+
+      const sites: any[] = [];
+      cards.each((_, el) => {
+        const siteId = $(el).attr('data-site-id');
+        const internalLink = $(el).attr('data-internal-link');
+        const externalLink = $(el).attr('data-external-link');
+        const name = $(el).find('.review-card-name').text().trim();
+        const order = $(el).find('.review-card-order').text().trim();
+        const thumb =
+          $(el).find('.review-card-img').attr('data-src') ||
+          $(el).find('.review-card-img').attr('src');
+        const desc = $(el).find('.review-card-footer').text().trim();
+
+        if (name && internalLink) {
+          sites.push({
+            siteId,
+            order: parseInt(order, 10) || sites.length + 1,
+            name,
+            internalLink,
+            externalLink,
+            thumb,
+            desc,
+          });
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        slug,
+        totalSites: sites.length,
+        sites,
+      });
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+  }
+
+  // Default: Return all 30 locales
   const localesWithUrls = ALL_LOCALES.map((l) => ({
     code: l.code,
     name: l.name,
@@ -173,6 +218,123 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    const action = body.action || 'category';
+    const apiKey = getOpenAIApiKey();
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'OPENAI_API_KEY .env.local daxilində tapılmadı.' },
+        { status: 500 }
+      );
+    }
+
+    const openai = new OpenAI({ apiKey });
+
+    // =========================================================================
+    // Action 1: Deep Scrape Single Site Review (e.g. view-source:566/pornhub)
+    // =========================================================================
+    if (action === 'scrape-site-review') {
+      const { internalLink, siteName, categorySlug, fallbackThumb, fallbackDesc } = body;
+      if (!internalLink) {
+        return NextResponse.json({ error: 'internalLink tələb olunur.' }, { status: 400 });
+      }
+
+      const html = await fetchPageSource(internalLink);
+      const $ = cheerio.load(html);
+
+      const resolvedName = $('[data-site-name]').first().text().trim() || siteName;
+      const domainRaw = $('[data-site-domain]').first().text().trim() || body.externalLink || '';
+      const domain = domainRaw.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase();
+      const ratingRaw = parseFloat($('.rating-count, [itemprop="ratingValue"]').first().text().trim()) || 9.5;
+      const rating = ratingRaw <= 5 ? +(ratingRaw * 2).toFixed(1) : +ratingRaw.toFixed(1);
+
+      let reviewDesc = $('.link-details-review[data-site-description], .link-details-review').html()?.trim() || '';
+      if (!reviewDesc) {
+        reviewDesc = $('.link-content, #site-description').text().trim() || fallbackDesc || '';
+      }
+
+      const pros = $('ul.pros li').map((_, el) => $(el).text().trim()).get().filter(Boolean);
+      const cons = $('ul.cons li').map((_, el) => $(el).text().trim()).get().filter(Boolean);
+      const bigThumb = $('.big-thumb-holder img, .example-thumb-img').attr('src') || fallbackThumb;
+
+      // OpenAI 100/100 Human Site Review Rewriter
+      const systemPrompt = `You are an elite, brutally honest adult site critic writing for PornHub.net.co.
+Write an authentic, 100% human-voiced, engaging in-depth review for ${resolvedName}.
+
+STRICT RULES:
+1. NO AI WORDS: Never use "dive into", "delve", "testament", "realm", "plethora", "furthermore", "meticulous".
+2. BRANDING: Replace any mention of "ThePornDude" with "PornHub.net.co" or "our review team".
+3. TONE: 100/100 Human. Conversational, humorous, direct, street-smart.
+4. OUTPUT: Respond with a JSON object:
+{
+  "shortDescription": "2-3 punchy sentences summarizing the site under 200 characters",
+  "longReview": "Full rewritten in-depth review article (3-5 detailed paragraphs with H3 sub-headings)",
+  "pros": ["3 to 5 real strong points as strings"],
+  "cons": ["1 to 3 realistic weak points as strings"]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: `Site Name: ${resolvedName}\nDomain: ${domain}\nOriginal Review Content:\n${reviewDesc}\nOriginal Pros:\n${JSON.stringify(pros)}\nOriginal Cons:\n${JSON.stringify(cons)}`,
+          },
+        ],
+        temperature: 0.85,
+      });
+
+      let rewritten: any = {};
+      try {
+        rewritten = JSON.parse(response.choices[0]?.message?.content || '{}');
+      } catch {
+        rewritten = {
+          shortDescription: fallbackDesc || '',
+          longReview: reviewDesc,
+          pros: pros.length ? pros : ['Fast streaming', 'Huge video selection'],
+          cons: cons.length ? cons : ['Ad placements on free tier'],
+        };
+      }
+
+      const siteSlug = resolvedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const supabase = getSupabaseAdmin();
+
+      const { error: upsertErr } = await supabase.from('sites').upsert(
+        {
+          id: body.siteId || siteSlug,
+          slug: siteSlug,
+          name: resolvedName,
+          domain,
+          url: body.externalLink || `https://${domain}`,
+          category_slug: categorySlug || 'top-porn-tube-sites',
+          rating,
+          short_description: { en: rewritten.shortDescription, az: rewritten.shortDescription },
+          pros: { en: rewritten.pros, az: rewritten.pros },
+          cons: { en: rewritten.cons, az: rewritten.cons },
+          thumbnail_url: bigThumb,
+          pricing_info: { long_review: { en: rewritten.longReview, az: rewritten.longReview } },
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'slug' }
+      );
+
+      return NextResponse.json({
+        success: !upsertErr,
+        siteName: resolvedName,
+        slug: siteSlug,
+        rating,
+        domain,
+        rewritten,
+        saved: !upsertErr,
+        error: upsertErr?.message,
+      });
+    }
+
+    // =========================================================================
+    // Action 2: Category Multi-Language Extraction & Rewrite
+    // =========================================================================
     const inputUrl = body.url || 'https://theporndude.com/top-porn-tube-sites';
     const slug = parseSlug(inputUrl);
     const targetCode = body.locale || 'en';
@@ -181,22 +343,25 @@ export async function POST(req: NextRequest) {
     const localeConfig = ALL_LOCALES.find((l) => l.code === targetCode) || ALL_LOCALES[0];
     const fetchUrl = localeConfig.getUrl(slug);
 
-    const apiKey = getOpenAIApiKey();
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'OPENAI_API_KEY tapılmadı. Zəhmət olmasa .env.local faylını yoxlayın.' },
-        { status: 500 }
-      );
-    }
-
     // Step 1: Ctrl+U Fetch
     const rawHtml = await fetchPageSource(fetchUrl);
 
-    // Step 2: Extract SEO & Content
+    // Step 2: Extract SEO, Breadcrumb, Header, Disclaimer, and Desc
     const $ = cheerio.load(rawHtml);
     const seoTitle = $('title').text().trim() || slug;
     const seoDescription = $('meta[name="description"]').attr('content')?.trim() || '';
-    const h1 = $('h1').text().trim() || slug.replace(/-/g, ' ');
+    const breadcrumb =
+      $('li.link-category [itemprop="name"]').text().trim() ||
+      $('[itemprop="name"]').eq(1).text().trim() ||
+      slug;
+    const h1 =
+      $('h1.link-header-title').text().trim() ||
+      $('h1').text().trim() ||
+      slug.replace(/-/g, ' ');
+    const disclaimer =
+      $('.link-header-subtitle-text').text().trim() ||
+      $('.link-header-subtitle').text().trim() ||
+      '';
 
     let descContainer = $('.category-desc.scrollbox.custom-scrollbar');
     if (!descContainer.length) {
@@ -211,8 +376,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Step 3: OpenAI 100/100 Human Rewrite
-    const openai = new OpenAI({ apiKey });
+    // Step 3: OpenAI 100/100 Human Category Rewrite
     const systemPrompt = `You are an elite, candid, seasoned adult entertainment directory reviewer and master copywriter writing for "PornHub.net.co" (PornHub Directory).
 Your writing style is 100% HUMAN (scored 100/100 by human authenticity benchmarks), witty, confident, highly engaging, and street-smart.
 
@@ -229,17 +393,20 @@ STRICT EDITORIAL RULES:
    The output MUST be written naturally in ${localeConfig.name}.
    Respond with a JSON object containing:
    {
-     "categoryTitle": "Rewritten punchy Category Title",
-     "seoTitle": "Rewritten SEO Title under 65 chars (e.g. Best ... 2026 | PornHub.net.co)",
+     "categoryTitle": "Rewritten punchy Category Title (e.g. Free Porn Tube Sites)",
+     "seoTitle": "Rewritten SEO Title under 65 chars (e.g. Best Free Porn Tubes 2026 | PornHub.net.co)",
      "seoDescription": "Rewritten click-worthy meta description under 155 chars",
+     "disclaimer": "Rewritten 1-2 sentence Editorial Disclaimer crediting PornHub.net.co",
      "content": "Rewritten full semantic HTML content with <h3> and <p> blocks"
    }`;
 
     const userPrompt = `Input Data to Rewrite in ${localeConfig.name}:
-Category Name: ${h1}
+Breadcrumb/Category Name: ${breadcrumb}
+Header H1: ${h1}
 Original SEO Title: ${seoTitle}
 Original SEO Description: ${seoDescription}
-Raw Text Content:
+Editorial Disclaimer: ${disclaimer}
+Raw Category Description (HTML):
 ${rawDescHtml}
 `;
 
@@ -258,9 +425,10 @@ ${rawDescHtml}
       rewrittenData = JSON.parse(response.choices[0].message.content || '{}');
     } catch {
       rewrittenData = {
-        categoryTitle: h1,
+        categoryTitle: breadcrumb || h1,
         seoTitle,
         seoDescription,
+        disclaimer,
         content: response.choices[0].message.content || '',
       };
     }
@@ -279,7 +447,7 @@ ${rawDescHtml}
       const taglineMap = catRecord?.tagline || {};
       const descMap = catRecord?.description || {};
 
-      nameMap[targetCode] = rewrittenData.categoryTitle || h1;
+      nameMap[targetCode] = rewrittenData.categoryTitle || breadcrumb || h1;
       taglineMap[targetCode] = rewrittenData.seoDescription || seoDescription;
       descMap[targetCode] = rewrittenData.content || rawDescHtml;
 

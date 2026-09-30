@@ -89,7 +89,7 @@ async function refreshCacheFromSupabase(): Promise<void> {
           rankChange: s.rank_change || fallback?.rankChange || 'same',
           badge: s.badge || fallback?.badge,
           shortDescription: (s.short_description || fallback?.shortDescription) as Record<Locale, string>,
-          longReview: fallback?.longReview || ({} as Record<Locale, string>),
+          longReview: ((s.pricing_info && s.pricing_info.long_review) || s.long_review || fallback?.longReview || {}) as Record<Locale, string>,
           pros: (s.pros || fallback?.pros) as Record<Locale, string[]>,
           cons: (s.cons || fallback?.cons) as Record<Locale, string[]>,
           scores: fallback?.scores || { safety: 10, mobile: 9.8, content: 9.9, value: 9.6 },

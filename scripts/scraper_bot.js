@@ -1,22 +1,20 @@
 #!/usr/bin/env node
 /**
  * ==============================================================================
- * PornHub.net.co - Multi-Language Autonomous Category Scraper & AI Rewriter Bot
+ * PornHub.net.co - Autonomous Category & Full Site Reviews Scraper + AI Rewriter
  * ==============================================================================
- * Automatically discovers, scrapes, and rewrites all 30 languages for any category:
- *   - Ctrl+U real browser headers (bypassing Cloudflare)
- *   - Extracts SEO titles, meta descriptions, and category-desc text blocks
- *   - Uses OpenAI GPT-4o to rewrite in 100% human voice without AI clichés
- *   - Replaces branding with "PornHub.net.co"
- *   - Saves directly to Supabase categories table for every single language
+ * Performs:
+ *   1. Category Level (SEO, Disclaimer, <h3> questions & .category-desc block)
+ *   2. Sites Level (Discovers all .review-card elements)
+ *   3. Deep Review Level (Visits each view-source:theporndude.com/{id}/{slug})
+ *   4. OpenAI GPT-4o 100/100 Human Rewrite (Replaces PornDude -> PornHub.net.co, zero AI clichés)
+ *   5. Saves directly into Supabase (categories & sites tables)
  *
  * Usage:
- *   node scripts/scraper_bot.js [CATEGORY_URL_OR_SLUG] [OPTIONAL_SINGLE_LOCALE]
- *
+ *   node scripts/scraper_bot.js [CATEGORY_URL] [--with-sites] [--limit N]
  * Examples:
  *   node scripts/scraper_bot.js https://theporndude.com/top-porn-tube-sites
- *   node scripts/scraper_bot.js top-porn-tube-sites
- *   node scripts/scraper_bot.js https://theporndude.com/top-porn-tube-sites de
+ *   node scripts/scraper_bot.js https://theporndude.com/top-porn-tube-sites --with-sites --limit 10
  * ==============================================================================
  */
 
@@ -28,7 +26,7 @@ const cheerio = require('cheerio');
 const { OpenAI } = require('openai');
 const { createClient } = require('@supabase/supabase-js');
 
-// 1. Load environment variables
+// 1. Environment loader
 function loadEnv() {
   const envPath = path.resolve(process.cwd(), '.env.local');
   if (fs.existsSync(envPath)) {
@@ -58,10 +56,10 @@ if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// 2. Comprehensive 30-Language Map (Matches exactly the user's list)
+// 2. All 30 Languages
 const ALL_LOCALES = [
   { code: 'en', name: 'English', getUrl: (slug) => `https://theporndude.com/${slug}` },
-  { code: 'az', name: 'Azerbaijani', getUrl: (slug) => `https://theporndude.com/${slug}` }, // Translated to native human Azerbaijani
+  { code: 'az', name: 'Azerbaijani', getUrl: (slug) => `https://theporndude.com/${slug}` },
   { code: 'ar', name: 'Arabic', getUrl: (slug) => `https://theporndude.com/ar/${slug}` },
   { code: 'cs', name: 'Czech', getUrl: (slug) => `https://theporndude.com/cs/${slug}` },
   { code: 'da', name: 'Danish', getUrl: (slug) => `https://theporndude.com/da/${slug}` },
@@ -92,15 +90,14 @@ const ALL_LOCALES = [
   { code: 'zh', name: 'Chinese', getUrl: (slug) => `https://theporndude.com/zh/${slug}` },
 ];
 
-// 3. Helper to parse slug
 function parseSlug(input) {
   try {
     if (input.startsWith('http')) {
       const u = new URL(input);
       const parts = u.pathname.split('/').filter(Boolean);
       if (parts.length === 0) return 'top-porn-tube-sites';
-      const localeCodes = ALL_LOCALES.map((l) => l.code);
-      if (localeCodes.includes(parts[0]) && parts.length > 1) {
+      const codes = ALL_LOCALES.map((l) => l.code);
+      if (codes.includes(parts[0]) && parts.length > 1) {
         return parts[1];
       }
       return parts[parts.length - 1];
@@ -111,7 +108,7 @@ function parseSlug(input) {
   }
 }
 
-// 4. Ctrl+U Style Direct HTTP Fetch (Browser Impersonation)
+// 3. Ctrl+U Style Direct HTTP Fetch (Browser Impersonation)
 function fetchPageSource(urlStr) {
   return new Promise((resolve, reject) => {
     try {
@@ -170,8 +167,8 @@ function fetchPageSource(urlStr) {
   });
 }
 
-// 5. OpenAI 100/100 Human Rewriter
-async function rewriteWithOpenAI(data, targetLang) {
+// 4. OpenAI 100/100 Human Category Rewriter
+async function rewriteCategory(data, targetLang) {
   const systemPrompt = `You are an elite, candid, seasoned adult entertainment directory reviewer and master copywriter writing for "PornHub.net.co" (PornHub Directory).
 Your writing style is 100% HUMAN (scored 100/100 by human authenticity benchmarks), witty, confident, highly engaging, and street-smart.
 
@@ -186,7 +183,7 @@ STRICT EDITORIAL RULES:
    Output clean semantic HTML (using <h3>, <p>, <strong> where appropriate).
 5. TARGET LANGUAGE:
    The output MUST be written naturally in ${targetLang}.
-   Respond with a JSON object containing:
+   Respond with a JSON object:
    {
      "categoryTitle": "Rewritten punchy Category Title",
      "seoTitle": "Rewritten SEO Title under 65 chars (e.g. Best ... 2026 | PornHub.net.co)",
@@ -194,8 +191,7 @@ STRICT EDITORIAL RULES:
      "content": "Rewritten full semantic HTML content with <h3> and <p> blocks"
    }`;
 
-  const userPrompt = `Input Data to Rewrite:
-Category Name: ${data.h1}
+  const userPrompt = `Category: ${data.h1}
 Original SEO Title: ${data.seoTitle}
 Original SEO Description: ${data.seoDescription}
 Raw Text Content:
@@ -224,128 +220,233 @@ ${data.rawDescHtml}
   }
 }
 
-// 6. Process a Single Language
-async function processLocale(slug, localeItem) {
-  const url = localeItem.getUrl(slug);
-  const lang = localeItem.name;
-  const code = localeItem.code;
+// 5. OpenAI 100/100 Human Site Review Rewriter
+async function rewriteSiteReview(siteData) {
+  const systemPrompt = `You are an elite, brutally honest adult site critic and reviewer writing for PornHub.net.co.
+Write an authentic, 100% human-voiced, engaging in-depth review for ${siteData.name}.
 
-  console.log(`\n⏳ [${code.toUpperCase()}] ${lang} səhifəsi çəkilir: ${url}`);
+STRICT RULES:
+1. NO AI WORDS: Never use "dive into", "delve", "testament", "realm", "plethora", "furthermore", "meticulous".
+2. BRANDING: Replace any mention of "ThePornDude" with "PornHub.net.co" or "our review team".
+3. TONE: 100/100 Human. Conversational, humorous, direct, street-smart.
+4. OUTPUT: Respond with a JSON object:
+{
+  "shortDescription": "2-3 punchy sentences summarizing the site under 200 characters",
+  "longReview": "Full rewritten in-depth review article (3-5 detailed paragraphs with H3 sub-headings)",
+  "pros": ["3 to 5 real strong points as strings"],
+  "cons": ["1 to 3 realistic weak points as strings"]
+}`;
+
+  const userPrompt = `Site Name: ${siteData.name}
+Domain: ${siteData.domain}
+Raw Original Review:
+${siteData.rawReviewText}
+Original Pros:
+${JSON.stringify(siteData.pros)}
+Original Cons:
+${JSON.stringify(siteData.cons)}
+`;
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    temperature: 0.85,
+  });
 
   try {
-    const rawHtml = await fetchPageSource(url);
-    const $ = cheerio.load(rawHtml);
+    return JSON.parse(response.choices[0].message.content);
+  } catch {
+    return {
+      shortDescription: siteData.shortDesc || '',
+      longReview: siteData.rawReviewText || '',
+      pros: siteData.pros || [],
+      cons: siteData.cons || [],
+    };
+  }
+}
 
-    const seoTitle = $('title').text().trim() || slug;
-    const seoDescription = $('meta[name="description"]').attr('content')?.trim() || '';
-    const h1 = $('h1').text().trim() || slug.replace(/-/g, ' ');
+// 6. Deep Scrape Review Page (e.g. view-source:theporndude.com/566/pornhub)
+async function scrapeSingleSiteReview(internalUrl, fallbackData) {
+  console.log(`\n  🔎 [Ctrl+U] Sayt rəyi çəkilir: ${internalUrl}`);
+  try {
+    const html = await fetchPageSource(internalUrl);
+    const $ = cheerio.load(html);
 
-    let descContainer = $('.category-desc.scrollbox.custom-scrollbar');
-    if (!descContainer.length) descContainer = $('.category-desc');
+    const siteName = $('[data-site-name]').first().text().trim() || fallbackData.name;
+    const domainRaw = $('[data-site-domain]').first().text().trim() || fallbackData.externalLink;
+    const domain = domainRaw.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase();
+    const ratingRaw = parseFloat($('.rating-count, [itemprop="ratingValue"]').first().text().trim()) || 9.5;
+    const rating = ratingRaw <= 5 ? +(ratingRaw * 2).toFixed(1) : +(ratingRaw).toFixed(1); // Scale to 10
 
-    const rawDescHtml = descContainer.html()?.trim() || '';
-    if (!rawDescHtml) {
-      console.warn(`⚠️ [${code.toUpperCase()}] category-desc bloku tapılmadı, keçilir.`);
-      return null;
+    let reviewDesc = $('.link-details-review[data-site-description], .link-details-review').html()?.trim() || '';
+    if (!reviewDesc) {
+      reviewDesc = $('.link-content, #site-description').text().trim();
     }
 
-    console.log(`🤖 [${code.toUpperCase()}] OpenAI GPT-4o ilə ${lang} dilində rewrite edilir...`);
-    const rewritten = await rewriteWithOpenAI(
-      { h1, seoTitle, seoDescription, rawDescHtml },
-      lang
-    );
+    const pros = $('ul.pros li').map((_, el) => $(el).text().trim()).get().filter(Boolean);
+    const cons = $('ul.cons li').map((_, el) => $(el).text().trim()).get().filter(Boolean);
+    const bigThumb = $('.big-thumb-holder img, .example-thumb-img').attr('src') || fallbackData.thumb;
 
-    console.log(`✅ [${code.toUpperCase()}] Rewrite tamamlandı!`);
+    console.log(`  🤖 OpenAI GPT-4o ilə ${siteName} rəyi 100% human rewrite edilir...`);
+    const rewritten = await rewriteSiteReview({
+      name: siteName,
+      domain,
+      rawReviewText: reviewDesc,
+      pros: pros.length > 0 ? pros : ['High quality HD streaming', 'Huge library', 'Regular updates'],
+      cons: cons.length > 0 ? cons : ['Ad placements on free tier'],
+      shortDesc: fallbackData.desc,
+    });
+
+    const slug = siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
     return {
-      code,
-      name: rewritten.categoryTitle || h1,
-      seoTitle: rewritten.seoTitle || seoTitle,
-      tagline: rewritten.seoDescription || seoDescription,
-      description: rewritten.content || rawDescHtml,
+      id: fallbackData.siteId || slug,
+      slug,
+      name: siteName,
+      domain,
+      url: fallbackData.externalLink || `https://${domain}`,
+      rating,
+      short_description: { en: rewritten.shortDescription },
+      long_review: { en: rewritten.longReview },
+      pros: { en: rewritten.pros },
+      cons: { en: rewritten.cons },
+      thumbnail_url: bigThumb,
     };
   } catch (err) {
-    console.error(`❌ [${code.toUpperCase()}] Xəta baş verdi: ${err.message}`);
+    console.error(`  ⚠️ Sayt rəyini çəkmək mümkün olmadı (${fallbackData.name}): ${err.message}`);
     return null;
   }
 }
 
 // 7. Main Runner
 async function main() {
-  const inputArg = process.argv[2] || 'https://theporndude.com/top-porn-tube-sites';
+  const args = process.argv.slice(2);
+  const inputArg = args.find((a) => !a.startsWith('--')) || 'https://theporndude.com/top-porn-tube-sites';
   const slug = parseSlug(inputArg);
-  const singleLocale = process.argv[3]; // Optional single locale override
+  const withSites = args.includes('--with-sites');
+  const limitIdx = args.indexOf('--limit');
+  const limit = limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : 5;
 
   console.log('====================================================================');
-  console.log('🌐 PORNHUB.NET.CO - BÜTÜN DİLLƏR ÜZRƏ AVTOMATİK KATEQORİYA BOTU');
+  console.log('🌐 PORNHUB.NET.CO - TAM AVTOMATİK KATEQORİYA VƏ SAYT RƏYİ BOTU');
   console.log('====================================================================');
-  console.log(`🏷️  Hədəf Kateqoriya Slug: ${slug}`);
-  console.log(`📚 Toplam Dil Sayı:       ${singleLocale ? 1 : ALL_LOCALES.length} dil`);
+  console.log(`🏷️  Kateqoriya Slug: ${slug}`);
+  console.log(`🚀 Sayt Rəyləri Rejimi: ${withSites ? `Aktiv (Limit: ${limit})` : 'Yalnız Kateqoriya Mətnləri'}`);
   console.log('====================================================================');
 
-  const targetLocales = singleLocale
-    ? ALL_LOCALES.filter((l) => l.code === singleLocale)
-    : ALL_LOCALES;
+  // Step 1: Category Level (English page to discover all site cards)
+  console.log(`\n📡 1. Kateqoriya əsas səhifəsi çəkilir (view-source:theporndude.com/${slug})...`);
+  const catUrl = `https://theporndude.com/${slug}`;
+  const catHtml = await fetchPageSource(catUrl);
+  const $ = cheerio.load(catHtml);
 
-  if (targetLocales.length === 0) {
-    console.error(`❌ Təyin olunmuş dil tapılmadı: ${singleLocale}`);
-    process.exit(1);
+  // Extract Category Essentials
+  const seoTitle = $('title').text().trim();
+  const seoDescription = $('meta[name="description"]').attr('content')?.trim() || '';
+  const h1 = $('h1').text().trim() || slug.replace(/-/g, ' ');
+  const breadcrumbName = $('[itemprop="name"]').last().text().trim() || h1;
+  const disclaimerText = $('.link-header-subtitle-text').text().replace('Editorial Disclaimer:', '').trim();
+
+  let descContainer = $('.category-desc.scrollbox.custom-scrollbar');
+  if (!descContainer.length) descContainer = $('.category-desc');
+  const rawDescHtml = descContainer.html()?.trim() || '';
+
+  console.log(`✅ Kateqoriya tapıldı: "${h1}"`);
+  console.log(`📄 category-desc həcmi: ${(rawDescHtml.length / 1024).toFixed(1)} KB`);
+
+  // Step 2: OpenAI Category Rewrite
+  console.log(`\n🤖 2. Kateqoriya OpenAI GPT-4o ilə 100% human rewrite edilir...`);
+  const rewrittenCat = await rewriteCategory(
+    { h1, seoTitle, seoDescription, rawDescHtml },
+    'English'
+  );
+
+  // Save to Supabase
+  console.log(`💾 3. Kateqoriya Supabase bazasında yenilənir...`);
+  const { error: catErr } = await supabase.from('categories').upsert(
+    {
+      id: slug,
+      slug,
+      name: { en: rewrittenCat.categoryTitle || h1 },
+      tagline: { en: rewrittenCat.seoDescription || seoDescription },
+      description: { en: rewrittenCat.content || rawDescHtml },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'slug' }
+  );
+
+  if (catErr) {
+    console.error('⚠️ Kateqoriya yazılma xətası:', catErr.message);
+  } else {
+    console.log(`✅ Kateqoriya "${slug}" Supabase-də uğurla yeniləndi!`);
   }
 
-  // 7.1 Fetch current category in Supabase
-  const { data: catRecord } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+  // Step 3: Extract Site Cards
+  const cards = $('.review-card');
+  console.log(`\n📦 4. Kateqoriyada tapılan sayt kartları sayı: ${cards.length}`);
 
-  const nameMap = catRecord?.name || {};
-  const taglineMap = catRecord?.tagline || {};
-  const descMap = catRecord?.description || {};
+  const siteItems = [];
+  cards.each((i, el) => {
+    const siteId = $(el).attr('data-site-id');
+    const internalLink = $(el).attr('data-internal-link');
+    const externalLink = $(el).attr('data-external-link');
+    const name = $(el).find('.review-card-name').text().trim();
+    const order = $(el).find('.review-card-order').text().trim();
+    const thumb = $(el).find('.review-card-img').attr('data-src') || $(el).find('.review-card-img').attr('src');
+    const desc = $(el).find('.review-card-footer').text().trim();
 
-  let successCount = 0;
+    if (name && internalLink) {
+      siteItems.push({ siteId, order, name, internalLink, externalLink, thumb, desc });
+    }
+  });
 
-  // Process sequentially or with slight delay to ensure pristine quality & avoid rate limits
-  for (let i = 0; i < targetLocales.length; i++) {
-    const item = targetLocales[i];
-    console.log(`\n---------------------------------------------------------`);
-    console.log(`▶ Tərəqqi: [${i + 1}/${targetLocales.length}] - ${item.name} (${item.code.toUpperCase()})`);
+  if (withSites) {
+    const toProcess = siteItems.slice(0, limit);
+    console.log(`\n🚀 5. ${toProcess.length} sayt üçün daxili rəy səhifələri (view-source:...) açılır və AI ilə yazılır:`);
 
-    const result = await processLocale(slug, item);
+    for (let i = 0; i < toProcess.length; i++) {
+      const site = toProcess[i];
+      console.log(`\n--- [${i + 1}/${toProcess.length}] ${site.name} (#${site.order}) ---`);
 
-    if (result) {
-      nameMap[result.code] = result.name;
-      taglineMap[result.code] = result.tagline;
-      descMap[result.code] = result.description;
+      const reviewData = await scrapeSingleSiteReview(site.internalLink, site);
 
-      // Update Supabase immediately after each language so progress is persistent
-      const { error: updateErr } = await supabase
-        .from('categories')
-        .upsert(
+      if (reviewData) {
+        // Upsert to Supabase sites table
+        const { error: siteErr } = await supabase.from('sites').upsert(
           {
-            id: slug,
-            slug,
-            name: nameMap,
-            tagline: taglineMap,
-            description: descMap,
+            id: reviewData.id,
+            slug: reviewData.slug,
+            name: reviewData.name,
+            domain: reviewData.domain,
+            url: reviewData.url,
+            category_slug: slug,
+            rating: reviewData.rating,
+            short_description: reviewData.short_description,
+            pros: reviewData.pros,
+            cons: reviewData.cons,
+            thumbnail_url: reviewData.thumbnail_url,
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'slug' }
         );
 
-      if (updateErr) {
-        console.error(`⚠️ Supabase qeydiyyat xətası (${item.code}):`, updateErr.message);
-      } else {
-        console.log(`💾 [${item.code.toUpperCase()}] Supabase bazasına yazıldı!`);
-        successCount++;
+        if (siteErr) {
+          console.error(`  ⚠️ Sayt yazılma xətası (${site.name}):`, siteErr.message);
+        } else {
+          console.log(`  💾 [SUPABASE] ${site.name} bazaya yazıldı və rəy hazırlandı!`);
+        }
       }
-    }
 
-    // Small courteous pause between languages
-    await new Promise((r) => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 800));
+    }
   }
 
   console.log('\n====================================================================');
-  console.log(`🎉 ƏMƏLİYYAT BİTDİ! Toplam ${successCount}/${targetLocales.length} dil uğurla hazırlandı və Supabase bazasına yazıldı.`);
+  console.log('🎉 PROSES TAMAMLANDI!');
   console.log('====================================================================');
 }
 
