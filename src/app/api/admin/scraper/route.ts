@@ -164,12 +164,19 @@ export async function GET(req: NextRequest) {
         const siteId = $(el).attr('data-site-id');
         const internalLink = $(el).attr('data-internal-link');
         const externalLink = $(el).attr('data-external-link');
+        const affiliateLink = $(el).attr('data-category-link') || externalLink;
         const name = $(el).find('.review-card-name').text().trim();
         const order = $(el).find('.review-card-order').text().trim();
-        const thumb =
-          $(el).find('.review-card-img').attr('data-src') ||
-          $(el).find('.review-card-img').attr('src');
         const desc = $(el).find('.review-card-footer').text().trim();
+
+        // Flag and Badge Analysis
+        const isVr = $(el).find('.icon_vr_friendly, .vr-friendly-icon').length > 0;
+        const isAi = $(el).find('.ai-friendly-icon, .icon_ai_friendly').length > 0;
+        const isFake = $(el).find('.is-fake-icon').length > 0;
+        const is18Plus = $(el).find('.is-18-friendly-icon').length > 0;
+        const hasSale = $(el).find('.has_sale').length > 0;
+        const isTrending = $(el).find('.icon_position_changed').length > 0;
+        const isDead = $(el).hasClass('deadsite') || $(el).find('.deadsite-drop').length > 0;
 
         if (name && internalLink) {
           sites.push({
@@ -178,8 +185,15 @@ export async function GET(req: NextRequest) {
             name,
             internalLink,
             externalLink,
-            thumb,
+            affiliateLink,
             desc,
+            isVr,
+            isAi,
+            isFake,
+            is18Plus,
+            hasSale,
+            isTrending,
+            isDead,
           });
         }
       });
@@ -234,7 +248,9 @@ export async function POST(req: NextRequest) {
     // Action 1: Deep Scrape Single Site Review (e.g. view-source:566/pornhub)
     // =========================================================================
     if (action === 'scrape-site-review') {
-      const { internalLink, siteName, categorySlug, fallbackThumb, fallbackDesc } = body;
+      const { internalLink, siteName, categorySlug, fallbackDesc } = body;
+      const targetLang = body.locale || 'en';
+
       if (!internalLink) {
         return NextResponse.json({ error: 'internalLink tələb olunur.' }, { status: 400 });
       }
@@ -242,46 +258,88 @@ export async function POST(req: NextRequest) {
       const html = await fetchPageSource(internalLink);
       const $ = cheerio.load(html);
 
-      const resolvedName = $('[data-site-name]').first().text().trim() || siteName;
-      const domainRaw = $('[data-site-domain]').first().text().trim() || body.externalLink || '';
+      const resolvedName = $('.link-title-name, [data-site-name]').first().text().trim() || siteName;
+      const domainRaw = $('.site_url, .favicon-bar-domain, [data-site-domain]').first().text().trim() || body.externalLink || '';
       const domain = domainRaw.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase();
-      const ratingRaw = parseFloat($('.rating-count, [itemprop="ratingValue"]').first().text().trim()) || 9.5;
-      const rating = ratingRaw <= 5 ? +(ratingRaw * 2).toFixed(1) : +ratingRaw.toFixed(1);
 
+      // JSON-LD rating & review count extraction
+      let ldRating: number | null = null;
+      let ldReviewCount: number | null = null;
+      $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+          const json = JSON.parse($(el).html() || '{}');
+          if (json.aggregateRating) {
+            if (json.aggregateRating.ratingValue) ldRating = parseFloat(json.aggregateRating.ratingValue);
+            if (json.aggregateRating.reviewCount) ldReviewCount = parseInt(json.aggregateRating.reviewCount, 10);
+          }
+        } catch {}
+      });
+
+      const ratingRaw = ldRating || parseFloat($('.rating-count, [itemprop="ratingValue"]').first().text().trim()) || 9.5;
+      const rating = ratingRaw <= 5 ? +(ratingRaw * 2).toFixed(1) : +ratingRaw.toFixed(1);
+      const reviewCount = ldReviewCount || parseInt($('[itemprop="reviewCount"]').first().text().trim(), 10) || 15000;
+
+      // Flags and Badges Analysis
+      const isVr = $('.icon_vr_friendly, .vr-friendly-icon').length > 0;
+      const isAi = $('.ai-friendly-icon, .icon_ai_friendly').length > 0;
+      const isFake = $('.is-fake-icon').length > 0;
+      const is18Plus = $('.is-18-friendly-icon').length > 0;
+      const hasSale = $('.has_sale').length > 0;
+      const isTrending = $('.icon_position_changed').length > 0;
+
+      const reviewTitle = $('.link-title h1, h1').first().text().trim() || `${resolvedName} Review`;
       let reviewDesc = $('.link-details-review[data-site-description], .link-details-review').html()?.trim() || '';
       if (!reviewDesc) {
-        reviewDesc = $('.link-content, #site-description').text().trim() || fallbackDesc || '';
+        reviewDesc = $('.link-content, #site-description').html()?.trim() || fallbackDesc || '';
       }
 
       const pros = $('ul.pros li').map((_, el) => $(el).text().trim()).get().filter(Boolean);
       const cons = $('ul.cons li').map((_, el) => $(el).text().trim()).get().filter(Boolean);
-      const bigThumb = $('.big-thumb-holder img, .example-thumb-img').attr('src') || fallbackThumb;
+      const tags = $('.search-tags .search-tag').map((_, el) => $(el).text().trim()).get().filter(Boolean);
 
-      // OpenAI 100/100 Human Site Review Rewriter
-      const systemPrompt = `You are an elite, brutally honest adult site critic writing for PornHub.net.co.
-Write an authentic, 100% human-voiced, engaging in-depth review for ${resolvedName}.
+      // Exact GPT Rewrite Instruction
+      const systemPrompt = `GÖREV:
+Aşağıda verilen yetişkin web sitesi tanıtım ve inceleme metinlerini belirtilen dilde (${targetLang}) yeniden yaz.
+KURALLAR:
+1. Anlamı, bahsedilen platformun adını, teknik verilerini (video sayısı, çözünürlük, model bilgisi vb.) ve istatistiklerini kesinlikle koru.
+2. Metni tamamen özgün, SEO uyumlu, ilgi çekici ve doğal bir dille yeniden kurgula (spin/rewrite).
+3. 'review_content' içindeki HTML hiyerarşisini (<h3>, <p>, <strong> etiketlerini) aynen muhafaza et; yalnızca etiketlerin içindeki metinleri değiştir.
+4. "ThePornDude" veya "PornDude" markasını "PornHub.net.co" ile değiştir.
+5. Çıktıyı kesinlikle aşağıda verilen JSON şemasında döndür. JSON harici hiçbir açıklama ekleme.
 
-STRICT RULES:
-1. NO AI WORDS: Never use "dive into", "delve", "testament", "realm", "plethora", "furthermore", "meticulous".
-2. BRANDING: Replace any mention of "ThePornDude" with "PornHub.net.co" or "our review team".
-3. TONE: 100/100 Human. Conversational, humorous, direct, street-smart.
-4. OUTPUT: Respond with a JSON object:
+ÇIKTI JSON:
 {
-  "shortDescription": "2-3 punchy sentences summarizing the site under 200 characters",
-  "longReview": "Full rewritten in-depth review article (3-5 detailed paragraphs with H3 sub-headings)",
-  "pros": ["3 to 5 real strong points as strings"],
-  "cons": ["1 to 3 realistic weak points as strings"]
+  "site": {
+    "short_description": "Yeniden yazılmış 1-2 cümlelik kart teaserı",
+    "review_title": "Yeniden yazılmış inceleme başlığı",
+    "review_content": "<p>...</p><h3>...</h3><p>...</p>",
+    "pros": ["Özgün artı 1", "Özgün artı 2"],
+    "cons": ["Özgün eksi 1", "Özgün eksi 2"]
+  },
+  "seo": {
+    "seo_title": "Yeniden yazılmış tıklama odaklı Title (max 60 karakter)",
+    "seo_description": "Yeniden yazılmış Meta Description (max 160 karakter)"
+  }
 }`;
+
+      const userPrompt = JSON.stringify({
+        lang_code: targetLang,
+        site_name: resolvedName,
+        short_description: fallbackDesc || '',
+        review_title: reviewTitle,
+        review_content: reviewDesc,
+        pros: pros.length > 0 ? pros : ['HD/4K Streaming', 'Massive Video Library'],
+        cons: cons.length > 0 ? cons : ['Ad placements on free tier'],
+        seo_title: `${resolvedName} Review 2026 | PornHub.net.co`,
+        seo_description: (fallbackDesc || reviewDesc).slice(0, 160),
+      });
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
-          {
-            role: 'user',
-            content: `Site Name: ${resolvedName}\nDomain: ${domain}\nOriginal Review Content:\n${reviewDesc}\nOriginal Pros:\n${JSON.stringify(pros)}\nOriginal Cons:\n${JSON.stringify(cons)}`,
-          },
+          { role: 'user', content: userPrompt },
         ],
         temperature: 0.85,
       });
@@ -291,16 +349,38 @@ STRICT RULES:
         rewritten = JSON.parse(response.choices[0]?.message?.content || '{}');
       } catch {
         rewritten = {
-          shortDescription: fallbackDesc || '',
-          longReview: reviewDesc,
-          pros: pros.length ? pros : ['Fast streaming', 'Huge video selection'],
-          cons: cons.length ? cons : ['Ad placements on free tier'],
+          site: {
+            short_description: fallbackDesc || '',
+            review_title: reviewTitle,
+            review_content: reviewDesc,
+            pros: pros.length ? pros : ['Fast streaming', 'Huge video selection'],
+            cons: cons.length ? cons : ['Ad placements on free tier'],
+          },
+          seo: {
+            seo_title: `${resolvedName} Review 2026`,
+            seo_description: fallbackDesc || '',
+          },
         };
       }
 
       const siteSlug = resolvedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const supabase = getSupabaseAdmin();
 
+      // Merge localized JSONB fields
+      const { data: existingSite } = await supabase.from('sites').select('*').eq('slug', siteSlug).single();
+      const shortDescMap = existingSite?.short_description || {};
+      const prosMap = existingSite?.pros || {};
+      const consMap = existingSite?.cons || {};
+      const pricingMap = existingSite?.pricing_info && typeof existingSite.pricing_info === 'object' ? existingSite.pricing_info : {};
+      const longReviewMap = pricingMap.long_review || {};
+
+      shortDescMap[targetLang] = rewritten.site?.short_description || fallbackDesc || '';
+      prosMap[targetLang] = rewritten.site?.pros || pros;
+      consMap[targetLang] = rewritten.site?.cons || cons;
+      longReviewMap[targetLang] = rewritten.site?.review_content || reviewDesc;
+      pricingMap.long_review = longReviewMap;
+
+      // STRICT RULE: No images or thumbnails saved
       const { error: upsertErr } = await supabase.from('sites').upsert(
         {
           id: body.siteId || siteSlug,
@@ -310,11 +390,17 @@ STRICT RULES:
           url: body.externalLink || `https://${domain}`,
           category_slug: categorySlug || 'top-porn-tube-sites',
           rating,
-          short_description: { en: rewritten.shortDescription, az: rewritten.shortDescription },
-          pros: { en: rewritten.pros, az: rewritten.pros },
-          cons: { en: rewritten.cons, az: rewritten.cons },
-          thumbnail_url: bigThumb,
-          pricing_info: { long_review: { en: rewritten.longReview, az: rewritten.longReview } },
+          review_count: reviewCount,
+          is_18_plus: is18Plus,
+          is_trending: isTrending,
+          rank_change: isTrending ? 'up' : 'same',
+          short_description: shortDescMap,
+          pros: prosMap,
+          cons: consMap,
+          tags: tags.length > 0 ? tags : (existingSite?.tags || []),
+          thumbnail_url: null, // STRICTLY NO IMAGES
+          logo_url: null,      // STRICTLY NO IMAGES
+          pricing_info: pricingMap,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'slug' }
@@ -325,8 +411,14 @@ STRICT RULES:
         siteName: resolvedName,
         slug: siteSlug,
         rating,
+        reviewCount,
         domain,
-        rewritten,
+        rewritten: {
+          shortDescription: rewritten.site?.short_description,
+          longReview: rewritten.site?.review_content,
+          pros: rewritten.site?.pros,
+          cons: rewritten.site?.cons,
+        },
         saved: !upsertErr,
         error: upsertErr?.message,
       });
@@ -376,39 +468,39 @@ STRICT RULES:
       );
     }
 
-    // Step 3: OpenAI 100/100 Human Category Rewrite
-    const systemPrompt = `You are an elite, candid, seasoned adult entertainment directory reviewer and master copywriter writing for "PornHub.net.co" (PornHub Directory).
-Your writing style is 100% HUMAN (scored 100/100 by human authenticity benchmarks), witty, confident, highly engaging, and street-smart.
+    // Step 3: Exact GPT Rewrite for Category
+    const systemPrompt = `GÖREV:
+Aşağıda verilen yetişkin web sitesi/kategori tanıtım metinlerini belirtilen dilde (${targetCode}) yeniden yaz.
+KURALLAR:
+1. Anlamı, teknik verileri ve istatistikleri kesinlikle koru.
+2. Metni tamamen özgün, SEO uyumlu, ilgi çekici ve doğal bir dille yeniden kurgula (spin/rewrite).
+3. 'long_description' içindeki HTML hiyerarşisini (<h3>, <p>, <strong> etiketlerini) aynen muhafaza et; yalnızca etiketlerin içindeki metinleri değiştir.
+4. "ThePornDude" veya "PornDude" markasını "PornHub.net.co" ile değiştir.
+5. Çıktıyı kesinlikle aşağıda verilen JSON şemasında döndür. JSON harici hiçbir açıklama ekleme.
 
-STRICT EDITORIAL RULES:
-1. ZERO AI CLICHÉS:
-   NEVER use: "dive into", "delve", "testament", "tapestry", "embark", "furthermore", "moreover", "in conclusion", "it's essential to", "realm", "plethora", "beacon", "game-changer", "meticulously curated".
-2. BRANDING:
-   Always replace "ThePornDude" or "PornDude" with "PornHub.net.co" or "our directory".
-3. STRUCTURAL ACCURACY:
-   Preserve every question / H3 heading concept and paragraph topic in exact order, but completely reinvent the wording from scratch so there is zero plagiarism.
-4. FORMATTING:
-   Output clean semantic HTML (using <h3>, <p>, <strong> where appropriate).
-5. TARGET LANGUAGE:
-   The output MUST be written naturally in ${localeConfig.name}.
-   Respond with a JSON object containing:
-   {
-     "categoryTitle": "Rewritten punchy Category Title (e.g. Free Porn Tube Sites)",
-     "seoTitle": "Rewritten SEO Title under 65 chars (e.g. Best Free Porn Tubes 2026 | PornHub.net.co)",
-     "seoDescription": "Rewritten click-worthy meta description under 155 chars",
-     "disclaimer": "Rewritten 1-2 sentence Editorial Disclaimer crediting PornHub.net.co",
-     "content": "Rewritten full semantic HTML content with <h3> and <p> blocks"
-   }`;
+ÇIKTI JSON:
+{
+  "category": {
+    "name": "Yeniden yazılmış kategori adı",
+    "description": "Yeniden yazılmış kısa kategori açıklaması",
+    "long_description": "<h3>...</h3><p>...</p>",
+    "editorial_disclaimer": "Yeniden yazılmış editoryal uyarı"
+  },
+  "seo": {
+    "seo_title": "Yeniden yazılmış tıklama odaklı Title (max 60 karakter)",
+    "seo_description": "Yeniden yazılmış Meta Description (max 160 karakter)"
+  }
+}`;
 
-    const userPrompt = `Input Data to Rewrite in ${localeConfig.name}:
-Breadcrumb/Category Name: ${breadcrumb}
-Header H1: ${h1}
-Original SEO Title: ${seoTitle}
-Original SEO Description: ${seoDescription}
-Editorial Disclaimer: ${disclaimer}
-Raw Category Description (HTML):
-${rawDescHtml}
-`;
+    const userPrompt = JSON.stringify({
+      lang_code: targetCode,
+      category_name: breadcrumb,
+      category_description: seoDescription,
+      category_long_description: rawDescHtml,
+      category_disclaimer: disclaimer,
+      seo_title: seoTitle,
+      seo_description: seoDescription,
+    });
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -425,15 +517,20 @@ ${rawDescHtml}
       rewrittenData = JSON.parse(response.choices[0].message.content || '{}');
     } catch {
       rewrittenData = {
-        categoryTitle: breadcrumb || h1,
-        seoTitle,
-        seoDescription,
-        disclaimer,
-        content: response.choices[0].message.content || '',
+        category: {
+          name: breadcrumb || h1,
+          description: seoDescription,
+          long_description: rawDescHtml,
+          editorial_disclaimer: disclaimer,
+        },
+        seo: {
+          seo_title: seoTitle,
+          seo_description: seoDescription,
+        },
       };
     }
 
-    // Step 4: Save to Supabase
+    // Step 4: Save to Supabase (Merge localized fields)
     let saved = false;
     if (saveToDb) {
       const supabase = getSupabaseAdmin();
@@ -447,9 +544,9 @@ ${rawDescHtml}
       const taglineMap = catRecord?.tagline || {};
       const descMap = catRecord?.description || {};
 
-      nameMap[targetCode] = rewrittenData.categoryTitle || breadcrumb || h1;
-      taglineMap[targetCode] = rewrittenData.seoDescription || seoDescription;
-      descMap[targetCode] = rewrittenData.content || rawDescHtml;
+      nameMap[targetCode] = rewrittenData.category?.name || breadcrumb || h1;
+      taglineMap[targetCode] = rewrittenData.category?.description || rewrittenData.seo?.seo_description || seoDescription;
+      descMap[targetCode] = rewrittenData.category?.long_description || rawDescHtml;
 
       const { error: upsertErr } = await supabase.from('categories').upsert(
         {
@@ -474,7 +571,12 @@ ${rawDescHtml}
       locale: targetCode,
       localeName: localeConfig.name,
       fetchUrl,
-      rewrittenData,
+      rewrittenData: {
+        categoryTitle: rewrittenData.category?.name,
+        seoTitle: rewrittenData.seo?.seo_title,
+        seoDescription: rewrittenData.category?.description || rewrittenData.seo?.seo_description,
+        content: rewrittenData.category?.long_description,
+      },
       saved,
     });
   } catch (err: any) {
