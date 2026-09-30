@@ -72,6 +72,7 @@ export default async function CategoryPage({
 
   const categorySites = await getSitesByCategory(category.slug);
   const categorySchema = generateCategorySchema(category, categorySites, locale);
+  const categoryDescriptionHtml = category.description[locale] || category.description.en || '';
 
   const disclaimerFullText =
     "PornHub.net.co reviews third-party porn tube sites and adult destinations. We do not host, stream, or control any content. Homepage thumbnails of the reviewed sites are censored and used solely for identification purposes under fair use. All links direct to the official websites. This site is for adults (18+) only. Users should be aware that external links may lead to explicit content requiring age verification.";
@@ -199,16 +200,27 @@ export default async function CategoryPage({
                   return (
                     <React.Fragment key={site.id}>
                       {isThirdSlot && (
-                        <div className="portal-editorial-card">
-                          <h2 className="portal-editorial-h2">
-                            Are these the best {category.name[locale] || category.name.en.toLowerCase()} in the world to watch free 720p/1080p/4K HD videos?
-                          </h2>
-                          <p className="portal-editorial-p">
-                            Unless I&apos;m not aware of their existence; you&apos;ll not find any better sites for a safe session than these hand-picked destinations filled with verified content.
-                          </p>
-                          <p className="portal-editorial-p">
-                            Everyone knows that when it comes to finding the best free entertainment on the internet, the fastest way to do it is by streaming through trusted directories. Nobody wants to deal with spam or viruses. Most of these adult spots have thousands of daily verified updates.
-                          </p>
+                        <div className="portal-editorial-card" aria-label="Editorial Review">
+                          <div className="portal-editorial-scroll custom-hover-scrollbar">
+                            {categoryDescriptionHtml ? (
+                              <div
+                                className="portal-editorial-content"
+                                dangerouslySetInnerHTML={{ __html: categoryDescriptionHtml }}
+                              />
+                            ) : (
+                              <>
+                                <h2 className="portal-editorial-h2">
+                                  Are these the best {category.name[locale] || category.name.en} in the world to watch free 720p/1080p/4K HD videos?
+                                </h2>
+                                <p className="portal-editorial-p">
+                                  Unless I&apos;m not aware of their existence; you&apos;ll not find any better sites for a safe session than these hand-picked destinations filled with verified content.
+                                </p>
+                                <p className="portal-editorial-p">
+                                  Everyone knows that when it comes to finding the best free entertainment on the internet, the fastest way to do it is by streaming through trusted directories. Nobody wants to deal with spam or viruses. Most of these adult spots have thousands of daily verified updates.
+                                </p>
+                              </>
+                            )}
+                          </div>
                         </div>
                       )}
 
